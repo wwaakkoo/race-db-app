@@ -72,7 +72,8 @@ const presetWeights = {
   conservative: { name: '保守的戦略', popularity: 0.6, jockey: 0.2, distance: 0.1, base: 0.1 },
   balanced: { name: 'バランス戦略', popularity: 0.4, jockey: 0.3, distance: 0.2, base: 0.1 },
   aggressive: { name: '攻撃的戦略', popularity: 0.2, jockey: 0.4, distance: 0.3, base: 0.1 },
-  darkhorse: { name: '穴狙い戦略', popularity: 0.1, jockey: 0.4, distance: 0.4, base: 0.1 }
+  darkhorse: { name: '穴狙い戦略', popularity: 0.1, jockey: 0.4, distance: 0.4, base: 0.1 },
+  optimal: { name: '🧠 AI最適化', popularity: 0.4, jockey: 0.3, distance: 0.2, base: 0.1 }
 };
 
 const RaceForm = () => {
@@ -97,6 +98,8 @@ const RaceForm = () => {
   });
   const [selectedPreset, setSelectedPreset] = useState<keyof typeof presetWeights>('balanced');
   const [showWeightSettings, setShowWeightSettings] = useState(false);
+  const [optimizing, setOptimizing] = useState(false);
+  const [optimizationResult, setOptimizationResult] = useState<string>('');
 
   // レース情報自動抽出
   const extractRaceInfo = (text: string) => {
@@ -338,9 +341,13 @@ const RaceForm = () => {
   };
 
   // プリセット変更
-  const handlePresetChange = (presetKey: keyof typeof presetWeights) => {
+  const handlePresetChange = async (presetKey: keyof typeof presetWeights) => {
     setSelectedPreset(presetKey);
-    if (presetKey !== 'custom') {
+    
+    if (presetKey === 'optimal') {
+      // AI最適化を実行
+      await optimizeWeights();
+    } else if (presetKey !== 'custom') {
       const preset = presetWeights[presetKey];
       setCustomWeights({
         popularity: preset.popularity,
@@ -348,7 +355,26 @@ const RaceForm = () => {
         distance: preset.distance,
         base: preset.base
       });
+      setOptimizationResult('');
     }
+  };
+
+  // AI最適化実行
+  const optimizeWeights = async () => {
+    setOptimizing(true);
+    try {
+      const optimalWeights = await localStorageApi.calculateOptimalWeights();
+      setCustomWeights(optimalWeights);
+      
+      const result = `📊 AI分析完了！\n人気: ${(optimalWeights.popularity * 100).toFixed(1)}% | 騎手: ${(optimalWeights.jockey * 100).toFixed(1)}% | 距離: ${(optimalWeights.distance * 100).toFixed(1)}% | ベース: ${(optimalWeights.base * 100).toFixed(1)}%`;
+      setOptimizationResult(result);
+      
+      console.log('🧠 AI最適化完了:', optimalWeights);
+    } catch (error) {
+      console.error('最適化エラー:', error);
+      setOptimizationResult('❌ 分析データが不足しています。レース結果を追加してから再実行してください。');
+    }
+    setOptimizing(false);
   };
 
   // 重み設定の変更（カスタム時）
@@ -697,8 +723,37 @@ const RaceForm = () => {
                     {selectedPreset === 'balanced' && '⚖️ バランスの取れた標準的な予測'}
                     {selectedPreset === 'aggressive' && '🔥 騎手や距離データを重視した攻撃的予測'}
                     {selectedPreset === 'darkhorse' && '🎲 穴馬を狙う高リスク・高リターン予測'}
+                    {selectedPreset === 'optimal' && '🧠 過去データから最適化された重み設定'}
                     {selectedPreset === 'custom' && '🔧 あなた専用のカスタム設定'}
                   </div>
+                  
+                  {/* AI最適化結果 */}
+                  {optimizing && (
+                    <div style={{ 
+                      marginTop: '10px', 
+                      padding: '10px', 
+                      backgroundColor: '#fff3cd', 
+                      borderRadius: '4px',
+                      fontSize: '14px',
+                      color: '#856404'
+                    }}>
+                      🧠 AI分析中... 過去のレースデータから最適な重みを計算しています
+                    </div>
+                  )}
+                  
+                  {optimizationResult && (
+                    <div style={{ 
+                      marginTop: '10px', 
+                      padding: '10px', 
+                      backgroundColor: optimizationResult.includes('❌') ? '#f8d7da' : '#d4edda', 
+                      borderRadius: '4px',
+                      fontSize: '12px',
+                      color: optimizationResult.includes('❌') ? '#721c24' : '#155724',
+                      whiteSpace: 'pre-line'
+                    }}>
+                      {optimizationResult}
+                    </div>
+                  )}
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
