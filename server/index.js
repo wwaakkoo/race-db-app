@@ -14,10 +14,6 @@ app.get('/', (req, res) => {
   res.send('Hello from RaceDB backend!');
 });
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-});
-
 app.post('/api/race', (req, res) => {
   console.log('📥 受信したレース情報:', req.body);
 
@@ -65,6 +61,74 @@ app.get('/api/race', (req, res) => {
     try {
       const races = JSON.parse(data);
       res.json(races);
+    } catch (parseErr) {
+      console.error('❌ JSONパースエラー:', parseErr);
+      res.status(500).json({ error: 'JSONパースに失敗しました' });
+    }
+  });
+});
+
+// 統計情報を計算する関数
+function calculatePopularityStats(races) {
+  const stats = {};
+  
+  races.forEach(race => {
+    if (!race.result) return;
+    
+    race.horses.forEach(horse => {
+      const popularity = horse.popularity;
+      if (!stats[popularity]) {
+        stats[popularity] = {
+          total: 0,
+          wins: 0,
+          places: 0,
+          shows: 0
+        };
+      }
+      
+      stats[popularity].total++;
+      
+      // 結果チェック
+      const winner = race.result["1着"];
+      const place = race.result["2着"];
+      const show = race.result["3着"];
+      
+      if (horse.name === winner) {
+        stats[popularity].wins++;
+        stats[popularity].places++;
+        stats[popularity].shows++;
+      } else if (horse.name === place) {
+        stats[popularity].places++;
+        stats[popularity].shows++;
+      } else if (horse.name === show) {
+        stats[popularity].shows++;
+      }
+    });
+  });
+  
+  // 勝率・連対率・複勝率を計算
+  Object.keys(stats).forEach(popularity => {
+    const s = stats[popularity];
+    s.winRate = s.total > 0 ? (s.wins / s.total * 100).toFixed(1) : "0.0";
+    s.placeRate = s.total > 0 ? (s.places / s.total * 100).toFixed(1) : "0.0";
+    s.showRate = s.total > 0 ? (s.shows / s.total * 100).toFixed(1) : "0.0";
+  });
+  
+  return stats;
+}
+
+// ✅ GET: 統計情報を取得
+app.get('/api/statistics', (_, res) => {
+  fs.readFile(DATA_PATH, 'utf8', (err, data) => {
+    if (err) {
+      console.error('❌ 統計取得エラー:', err);
+      return res.status(500).json({ error: 'ファイルの読み込みに失敗しました' });
+    }
+
+    try {
+      const races = JSON.parse(data);
+      const stats = calculatePopularityStats(races);
+      res.json(stats);
     } catch (parseErr) {
       console.error('❌ JSONパースエラー:', parseErr);
       res.status(500).json({ error: 'JSONパースに失敗しました' });

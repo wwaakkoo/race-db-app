@@ -29,4 +29,18 @@ export interface Horse {
     horses: Horse[];
     result?: RaceResult;
   }
+
+  export interface PopularityStats {
+    total: number;
+    wins: number;
+    places: number;
+    shows: number;
+    winRate: string;
+    placeRate: string;
+    showRate: string;
+  }
+
+  export interface StatsData {
+    [popularity: string]: PopularityStats;
+  }
   

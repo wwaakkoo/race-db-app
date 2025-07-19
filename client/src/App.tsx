@@ -1,6 +1,7 @@
 import React from 'react';
 import RaceForm from './components/RaceForm';
 import RaceList from './components/RaceList';
+import Statistics from './components/Statistics';
 
 function App() {
   return (
@@ -9,6 +10,8 @@ function App() {
       <RaceForm />
       <hr />
       <RaceList />
+      <hr />
+      <Statistics />
     </div>
   );
 }
