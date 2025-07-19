@@ -13,8 +13,25 @@ type Horse = {
   popularity: number;
 };
 
-const courses = ['阪神', '中山', '小倉', '函館', '東京', '福島', '中京', '札幌', '京都'];
-const distances = ['1000', '1200', '1400', '1600', '1800', '2000', '2200', '2400', '2500'];
+const courses = ['東京', '中山', '京都', '阪神', '新潟', '中京', '札幌', '函館', '福島', '小倉'];
+
+// 芝コース距離（実績ベース）
+const turfDistances = [
+  '1000', '1200', '1400', '1500', '1600', '1800', 
+  '2000', '2200', '2300', '2400', '2500', '2600', 
+  '3000', '3200', '3400', '3600'
+];
+
+// ダートコース距離（実績ベース）
+const dirtDistances = [
+  '1000', '1150', '1200', '1400', '1600', '1700', 
+  '1800', '1900', '2100', '2400'
+];
+
+// 馬場別距離選択肢を取得
+const getDistanceOptions = (surface: string) => {
+  return surface === 'ダート' ? dirtDistances : turfDistances;
+};
 const surfaces = ['芝', 'ダート'];
 const conditions = ['良', '稍重', '重', '不良'];
 const levels = ['未勝利', '500万下', '1000万下', '1600万下', 'オープン', 'G3', 'G2', 'G1'];
@@ -155,7 +172,17 @@ const RaceForm = () => {
 
   // raceInfo編集用ハンドラー
   const handleRaceChange = (key: keyof typeof raceInfo, value: string) => {
-    setRaceInfo(prev => ({ ...prev, [key]: value }));
+    if (key === 'surface') {
+      // 馬場変更時は距離をリセット（選択距離が新しい馬場で利用できない場合に備えて）
+      const newDistanceOptions = getDistanceOptions(value);
+      setRaceInfo(prev => ({
+        ...prev,
+        [key]: value,
+        distance: newDistanceOptions.includes(prev.distance) ? prev.distance : ''
+      }));
+    } else {
+      setRaceInfo(prev => ({ ...prev, [key]: value }));
+    }
   };
 
   // テキスト入力時にレース情報も抽出する
@@ -216,89 +243,129 @@ const RaceForm = () => {
         />
       </div>
 
-      <div>
-        <label>コース: </label>
-        {courses.map(c => (
-          <button
-            type="button"
-            key={c}
-            onClick={() => handleRaceChange('course', c)}
-            style={{
-              margin: 4,
-              backgroundColor: raceInfo.course === c ? 'skyblue' : 'white'
-            }}
-          >
-            {c}
-          </button>
-        ))}
+      <div style={{ marginBottom: '15px' }}>
+        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>コース: </label>
+        <div>
+          {courses.map(c => (
+            <button
+              type="button"
+              key={c}
+              onClick={() => handleRaceChange('course', c)}
+              style={{
+                margin: 4,
+                padding: '6px 12px',
+                backgroundColor: raceInfo.course === c ? '#007bff' : 'white',
+                color: raceInfo.course === c ? 'white' : 'black',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div>
-        <label>距離(m): </label>
-        {distances.map(d => (
-          <button
-            type="button"
-            key={d}
-            onClick={() => handleRaceChange('distance', d)}
-            style={{
-              margin: 4,
-              backgroundColor: raceInfo.distance === d ? 'skyblue' : 'white'
-            }}
-          >
-            {d}
-          </button>
-        ))}
+      <div style={{ marginBottom: '15px' }}>
+        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>馬場: </label>
+        <div>
+          {surfaces.map(s => (
+            <button
+              type="button"
+              key={s}
+              onClick={() => handleRaceChange('surface', s)}
+              style={{
+                margin: 4,
+                padding: '6px 12px',
+                backgroundColor: raceInfo.surface === s ? '#007bff' : 'white',
+                color: raceInfo.surface === s ? 'white' : 'black',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              {s}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div>
-        <label>馬場: </label>
-        {surfaces.map(s => (
-          <button
-            type="button"
-            key={s}
-            onClick={() => handleRaceChange('surface', s)}
-            style={{
-              margin: 4,
-              backgroundColor: raceInfo.surface === s ? 'skyblue' : 'white'
-            }}
-          >
-            {s}
-          </button>
-        ))}
+      <div style={{ marginBottom: '15px' }}>
+        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>距離: </label>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+          {getDistanceOptions(raceInfo.surface).map(d => (
+            <button
+              type="button"
+              key={d}
+              onClick={() => handleRaceChange('distance', d)}
+              style={{
+                padding: '4px 8px',
+                backgroundColor: raceInfo.distance === d ? '#007bff' : 'white',
+                color: raceInfo.distance === d ? 'white' : 'black',
+                border: '1px solid #ccc',
+                borderRadius: '3px',
+                cursor: 'pointer',
+                fontSize: '14px'
+              }}
+            >
+              {d}m
+            </button>
+          ))}
+        </div>
+        {raceInfo.surface && (
+          <small style={{ color: '#666', display: 'block', marginTop: '5px' }}>
+            {raceInfo.surface === 'ダート' ? 'ダートコース設定距離' : '芝コース設定距離'}
+          </small>
+        )}
       </div>
 
-      <div>
-        <label>馬場状態: </label>
-        {conditions.map(c => (
-          <button
-            type="button"
-            key={c}
-            onClick={() => handleRaceChange('condition', c)}
-            style={{
-              margin: 4,
-              backgroundColor: raceInfo.condition === c ? 'skyblue' : 'white'
-            }}
-          >
-            {c}
-          </button>
-        ))}
+      <div style={{ marginBottom: '15px' }}>
+        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>馬場状態: </label>
+        <div>
+          {conditions.map(c => (
+            <button
+              type="button"
+              key={c}
+              onClick={() => handleRaceChange('condition', c)}
+              style={{
+                margin: 4,
+                padding: '6px 12px',
+                backgroundColor: raceInfo.condition === c ? '#007bff' : 'white',
+                color: raceInfo.condition === c ? 'white' : 'black',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <div>
-        <label>レースレベル: </label>
-        {levels.map(l => (
-          <button
-            type="button"
-            key={l}
-            onClick={() => handleRaceChange('level', l)}
-            style={{
-              margin: 4,
-              backgroundColor: raceInfo.level === l ? 'skyblue' : 'white'
-            }}
-          >
-            {l}
-          </button>
-        ))}
+      <div style={{ marginBottom: '20px' }}>
+        <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>レースレベル: </label>
+        <div>
+          {levels.map(l => (
+            <button
+              type="button"
+              key={l}
+              onClick={() => handleRaceChange('level', l)}
+              style={{
+                margin: 4,
+                padding: '6px 12px',
+                backgroundColor: raceInfo.level === l ? '#007bff' : 'white',
+                color: raceInfo.level === l ? 'white' : 'black',
+                border: '1px solid #ccc',
+                borderRadius: '4px',
+                cursor: 'pointer'
+              }}
+            >
+              {l}
+            </button>
+          ))}
+        </div>
       </div>
 
       <h2>馬情報コピペ入力</h2>
