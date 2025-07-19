@@ -6,12 +6,12 @@ const Statistics: React.FC = () => {
   const [stats, setStats] = useState<StatsData>({});
   const [loading, setLoading] = useState(false);
   
-  // フィルタ状態
+  // フィルタ状態（複数選択対応）
   const [filters, setFilters] = useState({
-    course: '',
-    surface: '',
-    distance: '',
-    level: ''
+    course: [] as string[],
+    surface: [] as string[],
+    distance: [] as string[],
+    level: [] as string[]
   });
   
   // フィルタ用の選択肢データ
@@ -56,17 +56,23 @@ const Statistics: React.FC = () => {
   
   useEffect(() => {
     const filterParams = Object.fromEntries(
-      Object.entries(filters).filter(([_, value]) => value !== '')
+      Object.entries(filters).filter(([_, value]) => Array.isArray(value) && value.length > 0)
     );
     fetchStats(filterParams);
   }, [filters]);
   
   const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters(prev => {
+      const currentValues = prev[key as keyof typeof prev] as string[];
+      const newValues = currentValues.includes(value)
+        ? currentValues.filter(v => v !== value)  // 選択解除
+        : [...currentValues, value];  // 選択追加
+      return { ...prev, [key]: newValues };
+    });
   };
   
   const clearFilters = () => {
-    setFilters({ course: '', surface: '', distance: '', level: '' });
+    setFilters({ course: [], surface: [], distance: [], level: [] });
   };
 
   // 人気データのフィルタリングと並び替え
@@ -104,56 +110,68 @@ const Statistics: React.FC = () => {
       <h4 style={{ marginTop: 0 }}>フィルタ条件</h4>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px', marginBottom: '10px' }}>
         <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>コース:</label>
-          <select 
-            value={filters.course} 
-            onChange={(e) => handleFilterChange('course', e.target.value)}
-            style={{ width: '100%', padding: '5px' }}
-          >
-            <option value="">すべて</option>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>コース:</label>
+          <div style={{ maxHeight: '120px', overflowY: 'auto', border: '1px solid #ccc', padding: '5px', borderRadius: '3px' }}>
             {filterOptions.courses.map(course => (
-              <option key={course} value={course}>{course}</option>
+              <label key={course} style={{ display: 'block', marginBottom: '2px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={filters.course.includes(course)}
+                  onChange={() => handleFilterChange('course', course)}
+                  style={{ marginRight: '5px' }}
+                />
+                {course}
+              </label>
             ))}
-          </select>
+          </div>
         </div>
         <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>馬場:</label>
-          <select 
-            value={filters.surface} 
-            onChange={(e) => handleFilterChange('surface', e.target.value)}
-            style={{ width: '100%', padding: '5px' }}
-          >
-            <option value="">すべて</option>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>馬場:</label>
+          <div style={{ maxHeight: '120px', overflowY: 'auto', border: '1px solid #ccc', padding: '5px', borderRadius: '3px' }}>
             {filterOptions.surfaces.map(surface => (
-              <option key={surface} value={surface}>{surface}</option>
+              <label key={surface} style={{ display: 'block', marginBottom: '2px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={filters.surface.includes(surface)}
+                  onChange={() => handleFilterChange('surface', surface)}
+                  style={{ marginRight: '5px' }}
+                />
+                {surface}
+              </label>
             ))}
-          </select>
+          </div>
         </div>
         <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>距離:</label>
-          <select 
-            value={filters.distance} 
-            onChange={(e) => handleFilterChange('distance', e.target.value)}
-            style={{ width: '100%', padding: '5px' }}
-          >
-            <option value="">すべて</option>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>距離:</label>
+          <div style={{ maxHeight: '120px', overflowY: 'auto', border: '1px solid #ccc', padding: '5px', borderRadius: '3px' }}>
             {filterOptions.distances.map(distance => (
-              <option key={distance} value={distance}>{distance}m</option>
+              <label key={distance} style={{ display: 'block', marginBottom: '2px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={filters.distance.includes(distance)}
+                  onChange={() => handleFilterChange('distance', distance)}
+                  style={{ marginRight: '5px' }}
+                />
+                {distance}m
+              </label>
             ))}
-          </select>
+          </div>
         </div>
         <div>
-          <label style={{ display: 'block', marginBottom: '5px' }}>レベル:</label>
-          <select 
-            value={filters.level} 
-            onChange={(e) => handleFilterChange('level', e.target.value)}
-            style={{ width: '100%', padding: '5px' }}
-          >
-            <option value="">すべて</option>
+          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>レベル:</label>
+          <div style={{ maxHeight: '120px', overflowY: 'auto', border: '1px solid #ccc', padding: '5px', borderRadius: '3px' }}>
             {filterOptions.levels.map(level => (
-              <option key={level} value={level}>{level}</option>
+              <label key={level} style={{ display: 'block', marginBottom: '2px', cursor: 'pointer' }}>
+                <input
+                  type="checkbox"
+                  checked={filters.level.includes(level)}
+                  onChange={() => handleFilterChange('level', level)}
+                  style={{ marginRight: '5px' }}
+                />
+                {level}
+              </label>
             ))}
-          </select>
+          </div>
         </div>
       </div>
       <div style={{ display: 'flex', gap: '10px' }}>
@@ -164,20 +182,20 @@ const Statistics: React.FC = () => {
           フィルタをクリア
         </button>
         <button 
-          onClick={() => fetchStats(Object.fromEntries(Object.entries(filters).filter(([_, value]) => value !== '')))}
+          onClick={() => fetchStats(Object.fromEntries(Object.entries(filters).filter(([_, value]) => Array.isArray(value) && value.length > 0)))}
           disabled={loading} 
           style={{ padding: '5px 15px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
         >
           {loading ? '更新中...' : '統計を更新'}
         </button>
       </div>
-      {Object.values(filters).some(v => v !== '') && (
+      {Object.values(filters).some(v => Array.isArray(v) && v.length > 0) && (
         <div style={{ marginTop: '10px', fontSize: '14px', color: '#666' }}>
           <strong>適用中:</strong> 
-          {filters.course && `コース: ${filters.course} `}
-          {filters.surface && `馬場: ${filters.surface} `}
-          {filters.distance && `距離: ${filters.distance}m `}
-          {filters.level && `レベル: ${filters.level} `}
+          {filters.course.length > 0 && `コース: ${filters.course.join(', ')} `}
+          {filters.surface.length > 0 && `馬場: ${filters.surface.join(', ')} `}
+          {filters.distance.length > 0 && `距離: ${filters.distance.join(', ')}m `}
+          {filters.level.length > 0 && `レベル: ${filters.level.join(', ')} `}
         </div>
       )}
     </div>
@@ -259,7 +277,7 @@ const Statistics: React.FC = () => {
           <div style={{ marginTop: '15px', fontSize: '14px', color: '#666' }}>
             <p>
               <strong>見方:</strong> 
-              緑背景は勝率20%超の人気、期待値は単勝的中時に必要な最低オッズの目安です。フィルタ条件に該当するレースのみで統計を計算しています。
+              緑背景は勝率20%超の人気、期待値は単勝的中時に必要な最低オッズの目安です。複数選択したフィルタ条件のいずれかに該当するレースのみで統計を計算しています。
               <br />
               例: 1番人気の勝率が30%なら、3.3倍以上のオッズがあれば期待値プラス
               <br />
