@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { localStorageApi } from '../services/localStorageApi';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -40,8 +40,8 @@ const RaceComposition: React.FC = () => {
   const fetchRaces = async () => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/race');
-      setRaces(response.data);
+      const raceData = await localStorageApi.getRaces();
+      setRaces(raceData);
     } catch (error) {
       console.error('レースデータ取得エラー:', error);
     }
