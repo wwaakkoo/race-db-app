@@ -117,7 +117,7 @@ function calculatePopularityStats(races) {
   return stats;
 }
 
-// ✅ GET: 統計情報を取得
+// ✅ GET: 人気別統計情報を取得
 app.get('/api/statistics', (_, res) => {
   fs.readFile(DATA_PATH, 'utf8', (err, data) => {
     if (err) {
@@ -128,6 +128,205 @@ app.get('/api/statistics', (_, res) => {
     try {
       const races = JSON.parse(data);
       const stats = calculatePopularityStats(races);
+      res.json(stats);
+    } catch (parseErr) {
+      console.error('❌ JSONパースエラー:', parseErr);
+      res.status(500).json({ error: 'JSONパースに失敗しました' });
+    }
+  });
+});
+
+// 騎手別統計を計算する関数
+function calculateJockeyStats(races) {
+  const stats = {};
+  
+  races.forEach(race => {
+    if (!race.result) return;
+    
+    race.horses.forEach(horse => {
+      const jockey = horse.jockey;
+      if (!jockey) return;
+      
+      if (!stats[jockey]) {
+        stats[jockey] = {
+          total: 0,
+          wins: 0,
+          places: 0,
+          shows: 0
+        };
+      }
+      
+      stats[jockey].total++;
+      
+      // 結果チェック
+      const winner = race.result["1着"];
+      const place = race.result["2着"];
+      const show = race.result["3着"];
+      
+      if (horse.name === winner) {
+        stats[jockey].wins++;
+        stats[jockey].places++;
+        stats[jockey].shows++;
+      } else if (horse.name === place) {
+        stats[jockey].places++;
+        stats[jockey].shows++;
+      } else if (horse.name === show) {
+        stats[jockey].shows++;
+      }
+    });
+  });
+  
+  // 勝率・連対率・複勝率を計算
+  Object.keys(stats).forEach(jockey => {
+    const s = stats[jockey];
+    s.winRate = s.total > 0 ? (s.wins / s.total * 100).toFixed(1) : "0.0";
+    s.placeRate = s.total > 0 ? (s.places / s.total * 100).toFixed(1) : "0.0";
+    s.showRate = s.total > 0 ? (s.shows / s.total * 100).toFixed(1) : "0.0";
+  });
+  
+  return stats;
+}
+
+// コース別統計を計算する関数
+function calculateCourseStats(races) {
+  const stats = {};
+  
+  races.forEach(race => {
+    if (!race.result || !race.course) return;
+    
+    const course = race.course;
+    if (!stats[course]) {
+      stats[course] = {
+        totalRaces: 0,
+        avgField: 0,
+        surfaces: {},
+        distances: {},
+        levels: {}
+      };
+    }
+    
+    stats[course].totalRaces++;
+    stats[course].avgField = ((stats[course].avgField * (stats[course].totalRaces - 1)) + race.horses.length) / stats[course].totalRaces;
+    
+    // 馬場別集計
+    const surface = race.surface;
+    if (!stats[course].surfaces[surface]) {
+      stats[course].surfaces[surface] = 0;
+    }
+    stats[course].surfaces[surface]++;
+    
+    // 距離別集計
+    const distance = race.distance;
+    if (!stats[course].distances[distance]) {
+      stats[course].distances[distance] = 0;
+    }
+    stats[course].distances[distance]++;
+    
+    // レベル別集計
+    const level = race.level;
+    if (!stats[course].levels[level]) {
+      stats[course].levels[level] = 0;
+    }
+    stats[course].levels[level]++;
+  });
+  
+  // 平均出走頭数を小数点1桁に
+  Object.keys(stats).forEach(course => {
+    stats[course].avgField = parseFloat(stats[course].avgField.toFixed(1));
+  });
+  
+  return stats;
+}
+
+// 距離別統計を計算する関数
+function calculateDistanceStats(races) {
+  const stats = {};
+  
+  races.forEach(race => {
+    if (!race.result || !race.distance) return;
+    
+    const distance = race.distance;
+    const surface = race.surface;
+    const key = `${surface}${distance}m`;
+    
+    if (!stats[key]) {
+      stats[key] = {
+        surface,
+        distance,
+        totalRaces: 0,
+        avgField: 0,
+        courses: {}
+      };
+    }
+    
+    stats[key].totalRaces++;
+    stats[key].avgField = ((stats[key].avgField * (stats[key].totalRaces - 1)) + race.horses.length) / stats[key].totalRaces;
+    
+    // コース別集計
+    const course = race.course;
+    if (!stats[key].courses[course]) {
+      stats[key].courses[course] = 0;
+    }
+    stats[key].courses[course]++;
+  });
+  
+  // 平均出走頭数を小数点1桁に
+  Object.keys(stats).forEach(key => {
+    stats[key].avgField = parseFloat(stats[key].avgField.toFixed(1));
+  });
+  
+  return stats;
+}
+
+// ✅ GET: 騎手別統計情報を取得
+app.get('/api/statistics/jockey', (_, res) => {
+  fs.readFile(DATA_PATH, 'utf8', (err, data) => {
+    if (err) {
+      console.error('❌ 騎手別統計取得エラー:', err);
+      return res.status(500).json({ error: 'ファイルの読み込みに失敗しました' });
+    }
+
+    try {
+      const races = JSON.parse(data);
+      const stats = calculateJockeyStats(races);
+      res.json(stats);
+    } catch (parseErr) {
+      console.error('❌ JSONパースエラー:', parseErr);
+      res.status(500).json({ error: 'JSONパースに失敗しました' });
+    }
+  });
+});
+
+// ✅ GET: コース別統計情報を取得
+app.get('/api/statistics/course', (_, res) => {
+  fs.readFile(DATA_PATH, 'utf8', (err, data) => {
+    if (err) {
+      console.error('❌ コース別統計取得エラー:', err);
+      return res.status(500).json({ error: 'ファイルの読み込みに失敗しました' });
+    }
+
+    try {
+      const races = JSON.parse(data);
+      const stats = calculateCourseStats(races);
+      res.json(stats);
+    } catch (parseErr) {
+      console.error('❌ JSONパースエラー:', parseErr);
+      res.status(500).json({ error: 'JSONパースに失敗しました' });
+    }
+  });
+});
+
+// ✅ GET: 距離別統計情報を取得
+app.get('/api/statistics/distance', (_, res) => {
+  fs.readFile(DATA_PATH, 'utf8', (err, data) => {
+    if (err) {
+      console.error('❌ 距離別統計取得エラー:', err);
+      return res.status(500).json({ error: 'ファイルの読み込みに失敗しました' });
+    }
+
+    try {
+      const races = JSON.parse(data);
+      const stats = calculateDistanceStats(races);
       res.json(stats);
     } catch (parseErr) {
       console.error('❌ JSONパースエラー:', parseErr);

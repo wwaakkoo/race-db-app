@@ -130,5 +130,159 @@
       }
     ],
     "id": "17529061715788pfm74ieg"
+  },
+  {
+    "date": "2025-07-19",
+    "course": "函館",
+    "distance": 1800,
+    "surface": "芝",
+    "condition": "良",
+    "level": "1000万下",
+    "horses": [
+      {
+        "frameNumber": 1,
+        "horseNumber": 1,
+        "name": "ナムララジベラ",
+        "sex": "牝",
+        "age": 5,
+        "weight": 56,
+        "jockey": "小林脩",
+        "odds": 488,
+        "popularity": 67
+      },
+      {
+        "frameNumber": 2,
+        "horseNumber": 2,
+        "name": "ムガ",
+        "sex": "牝",
+        "age": 6,
+        "weight": 56,
+        "jockey": "古川吉",
+        "odds": 456,
+        "popularity": 128
+      },
+      {
+        "frameNumber": 3,
+        "horseNumber": 3,
+        "name": "ジョイフルニュース",
+        "sex": "牝",
+        "age": 3,
+        "weight": 53,
+        "jockey": "佐々木",
+        "odds": 456,
+        "popularity": 1
+      },
+      {
+        "frameNumber": 3,
+        "horseNumber": 4,
+        "name": "サクソンジェンヌ",
+        "sex": "牝",
+        "age": 4,
+        "weight": 56,
+        "jockey": "菱田",
+        "odds": 464,
+        "popularity": 12
+      },
+      {
+        "frameNumber": 4,
+        "horseNumber": 5,
+        "name": "オルノア",
+        "sex": "牝",
+        "age": 5,
+        "weight": 56,
+        "jockey": "横山和",
+        "odds": 494,
+        "popularity": 16
+      },
+      {
+        "frameNumber": 4,
+        "horseNumber": 6,
+        "name": "コスモディナー",
+        "sex": "牝",
+        "age": 4,
+        "weight": 56,
+        "jockey": "松岡",
+        "odds": 472,
+        "popularity": 78
+      },
+      {
+        "frameNumber": 5,
+        "horseNumber": 7,
+        "name": "リラボニート",
+        "sex": "牝",
+        "age": 4,
+        "weight": 56,
+        "jockey": "藤岡佑",
+        "odds": 466,
+        "popularity": 7
+      },
+      {
+        "frameNumber": 5,
+        "horseNumber": 8,
+        "name": "ピンクジン",
+        "sex": "牝",
+        "age": 5,
+        "weight": 56,
+        "jockey": "黛",
+        "odds": 438,
+        "popularity": 27
+      },
+      {
+        "frameNumber": 6,
+        "horseNumber": 9,
+        "name": "レイピカケ",
+        "sex": "牝",
+        "age": 4,
+        "weight": 56,
+        "jockey": "武豊",
+        "odds": 462,
+        "popularity": 13
+      },
+      {
+        "frameNumber": 6,
+        "horseNumber": 10,
+        "name": "ウインルピナス",
+        "sex": "牝",
+        "age": 5,
+        "weight": 56,
+        "jockey": "丹内",
+        "odds": 448,
+        "popularity": 46
+      },
+      {
+        "frameNumber": 7,
+        "horseNumber": 12,
+        "name": "ルーチェロッサ",
+        "sex": "牝",
+        "age": 5,
+        "weight": 56,
+        "jockey": "キング",
+        "odds": 476,
+        "popularity": 38
+      },
+      {
+        "frameNumber": 8,
+        "horseNumber": 13,
+        "name": "レッセパッセ",
+        "sex": "牝",
+        "age": 4,
+        "weight": 56,
+        "jockey": "斎藤",
+        "odds": 388,
+        "popularity": 103
+      },
+      {
+        "frameNumber": 8,
+        "horseNumber": 14,
+        "name": "カテリーナ",
+        "sex": "牝",
+        "age": 4,
+        "weight": 56,
+        "jockey": "浜中",
+        "odds": 478,
+        "popularity": 7
+      }
+    ],
+    "id": "1752909717423gzwg87eub"
   }
 ]
