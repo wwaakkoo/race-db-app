@@ -37,12 +37,6 @@ const ResultForm: React.FC<ResultFormProps> = ({ race, onResultUpdated, onCancel
     return `${horse.horseNumber}番 ${horse.name}`;
   };
 
-  const getSelectedHorseNumbers = () => {
-    const selected = [];
-    if (result["1着"]) selected.push(result["1着"]);
-    if (result["2着"]) selected.push(result["2着"]);
-    return selected;
-  };
 
   return (
     <div style={{ margin: '10px 0', padding: '15px', border: '1px solid #ddd', borderRadius: '5px' }}>

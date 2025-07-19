@@ -1,6 +1,36 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 
+interface Prediction {
+  horse: Horse;
+  predictedWinRate: number;
+  confidence: number;
+  factors: {
+    popularity: { rate: number; weight: number };
+    jockey: { rate: number; weight: number };
+    distance: { rate: number; weight: number };
+  };
+}
+
+interface Strategy {
+  type: string;
+  target: string;
+  reason: string;
+  confidence: number;
+  expectedValue: number | string;
+  profitMargin?: number;
+}
+
+interface StrategyResponse {
+  raceAnalysis: {
+    predictions: Prediction[];
+    topRecommendations: Prediction[];
+    averageConfidence: number;
+  };
+  recommendedStrategies: Strategy[];
+  riskLevel: 'low' | 'medium' | 'high';
+}
+
 type Horse = {
   frameNumber: number;
   horseNumber: number;
@@ -34,7 +64,7 @@ const getDistanceOptions = (surface: string) => {
 };
 const surfaces = ['芝', 'ダート'];
 const conditions = ['良', '稍重', '重', '不良'];
-const levels = ['未勝利', '500万下', '1000万下', '1600万下', 'オープン', 'G3', 'G2', 'G1'];
+const levels = ['新馬', '未勝利', '500万下', '1000万下', '1600万下', 'オープン', 'G3', 'G2', 'G1'];
 
 const RaceForm = () => {
   const [raceInfo, setRaceInfo] = useState({
@@ -48,6 +78,15 @@ const RaceForm = () => {
 
   const [horseText, setHorseText] = useState('');
   const [horses, setHorses] = useState<Horse[]>([]);
+  const [prediction, setPrediction] = useState<StrategyResponse | null>(null);
+  const [predictLoading, setPredictLoading] = useState(false);
+  const [customWeights, setCustomWeights] = useState({
+    popularity: 0.4,
+    jockey: 0.3,
+    distance: 0.2,
+    base: 0.1
+  });
+  const [showWeightSettings, setShowWeightSettings] = useState(false);
 
   // レース情報自動抽出
   const extractRaceInfo = (text: string) => {
@@ -253,9 +292,66 @@ const RaceForm = () => {
       });
       setHorses([]);
       setHorseText('');
+      setPrediction(null);
     } catch (error) {
       console.error('❌ 保存エラー:', error);
       alert('保存に失敗しました');
+    }
+  };
+
+  // AI予測実行
+  const runPrediction = async () => {
+    try {
+      setPredictLoading(true);
+      const raceData = {
+        course: raceInfo.course,
+        distance: parseInt(raceInfo.distance),
+        surface: raceInfo.surface,
+        condition: raceInfo.condition,
+        level: raceInfo.level,
+        horses: horses
+      };
+
+      const requestBody = {
+        raceData: raceData,
+        weights: customWeights
+      };
+
+      const response = await axios.post('http://localhost:3001/api/analysis/strategy', requestBody);
+      setPrediction(response.data);
+    } catch (error) {
+      console.error('❌ 予測エラー:', error);
+      alert('予測処理に失敗しました');
+    } finally {
+      setPredictLoading(false);
+    }
+  };
+
+  // 重み設定の変更
+  const handleWeightChange = (factor: string, value: number) => {
+    setCustomWeights(prev => ({
+      ...prev,
+      [factor]: value
+    }));
+  };
+
+  // 重みのリセット
+  const resetWeights = () => {
+    setCustomWeights({
+      popularity: 0.4,
+      jockey: 0.3,
+      distance: 0.2,
+      base: 0.1
+    });
+  };
+
+  // リスクレベル色取得
+  const getRiskColor = (level: string) => {
+    switch (level) {
+      case 'low': return '#28a745';
+      case 'medium': return '#ffc107';
+      case 'high': return '#dc3545';
+      default: return '#6c757d';
     }
   };
   return (
@@ -513,6 +609,180 @@ const RaceForm = () => {
             </tbody>
           </table>
         </>
+      )}
+
+      {/* 予測機能セクション */}
+      {horses.length > 0 && raceInfo.course && raceInfo.distance && raceInfo.surface && (
+        <div style={{ marginTop: '30px', backgroundColor: '#f8f9fa', padding: '20px', borderRadius: '8px' }}>
+          <h2>🎯 AI予測機能</h2>
+          <p>レース条件: {raceInfo.course} {raceInfo.distance}m {raceInfo.surface} ({horses.length}頭立て)</p>
+          
+          {/* 重み設定UI */}
+          <div style={{ marginBottom: '15px' }}>
+            <button
+              type="button"
+              onClick={() => setShowWeightSettings(!showWeightSettings)}
+              style={{
+                backgroundColor: '#6c757d',
+                color: 'white',
+                padding: '6px 12px',
+                border: 'none',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                marginRight: '10px',
+                fontSize: '14px'
+              }}
+            >
+              ⚙️ 重み設定 {showWeightSettings ? '▼' : '▶'}
+            </button>
+            
+            {showWeightSettings && (
+              <div style={{ 
+                backgroundColor: 'white', 
+                padding: '15px', 
+                border: '1px solid #dee2e6', 
+                borderRadius: '6px', 
+                marginTop: '10px' 
+              }}>
+                <h4>予測要素の重み設定</h4>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
+                  {Object.entries(customWeights).map(([factor, weight]) => (
+                    <div key={factor}>
+                      <label style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>
+                        {factor === 'popularity' ? '人気' : 
+                         factor === 'jockey' ? '騎手' : 
+                         factor === 'distance' ? '距離' : 'ベース'}: {(weight * 100).toFixed(0)}%
+                      </label>
+                      <input
+                        type="range"
+                        min="0"
+                        max="1"
+                        step="0.05"
+                        value={weight}
+                        onChange={(e) => handleWeightChange(factor, parseFloat(e.target.value))}
+                        style={{ width: '100%' }}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div style={{ marginTop: '10px', fontSize: '12px', color: '#6c757d' }}>
+                  合計: {(Object.values(customWeights).reduce((sum, w) => sum + w, 0) * 100).toFixed(0)}% 
+                  (自動正規化されます)
+                </div>
+                <button
+                  type="button"
+                  onClick={resetWeights}
+                  style={{
+                    backgroundColor: '#dc3545',
+                    color: 'white',
+                    padding: '4px 8px',
+                    border: 'none',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    marginTop: '8px',
+                    fontSize: '12px'
+                  }}
+                >
+                  デフォルトに戻す
+                </button>
+              </div>
+            )}
+          </div>
+          
+          <button
+            type="button"
+            onClick={runPrediction}
+            disabled={predictLoading}
+            style={{
+              backgroundColor: '#28a745',
+              color: 'white',
+              padding: '10px 20px',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: predictLoading ? 'not-allowed' : 'pointer',
+              marginBottom: '15px',
+              fontSize: '16px'
+            }}
+          >
+            {predictLoading ? '予測計算中...' : '🔮 予測実行'}
+          </button>
+
+          {prediction && (
+            <div style={{ marginTop: '15px' }}>
+              <div style={{ 
+                backgroundColor: getRiskColor(prediction.riskLevel),
+                color: 'white',
+                padding: '8px 12px',
+                borderRadius: '4px',
+                display: 'inline-block',
+                marginBottom: '15px'
+              }}>
+                リスクレベル: {prediction.riskLevel.toUpperCase()}
+              </div>
+
+              <h3>🏆 予測順位</h3>
+              <div style={{ marginBottom: '20px' }}>
+                {prediction.raceAnalysis.topRecommendations.map((pred, index) => (
+                  <div 
+                    key={index}
+                    style={{
+                      backgroundColor: index === 0 ? '#fff3cd' : '#f8f9fa',
+                      padding: '12px',
+                      margin: '5px 0',
+                      borderRadius: '6px',
+                      border: index === 0 ? '2px solid #ffc107' : '1px solid #dee2e6'
+                    }}
+                  >
+                    <div style={{ fontWeight: 'bold', fontSize: '16px' }}>
+                      {index + 1}位: {pred.horse.name} ({pred.horse.jockey})
+                    </div>
+                    <div style={{ fontSize: '14px', color: '#6c757d', marginTop: '4px' }}>
+                      予測勝率: {(pred.predictedWinRate * 100).toFixed(1)}% | 
+                      信頼度: {(pred.confidence * 100).toFixed(0)}% | 
+                      オッズ: {pred.horse.odds}倍 | 
+                      {pred.horse.popularity}番人気
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <h3>💰 推奨戦略</h3>
+              {prediction.recommendedStrategies.length > 0 ? (
+                <div>
+                  {prediction.recommendedStrategies.map((strategy, index) => (
+                    <div 
+                      key={index}
+                      style={{
+                        backgroundColor: '#d4edda',
+                        border: '1px solid #c3e6cb',
+                        padding: '12px',
+                        margin: '8px 0',
+                        borderRadius: '6px'
+                      }}
+                    >
+                      <div style={{ fontWeight: 'bold', color: '#155724', fontSize: '16px' }}>
+                        📋 {strategy.type}: {strategy.target}
+                      </div>
+                      <div style={{ fontSize: '14px', margin: '4px 0', color: '#155724' }}>
+                        💡 {strategy.reason}
+                      </div>
+                      <div style={{ fontSize: '12px', color: '#6c757d' }}>
+                        信頼度: {(strategy.confidence * 100).toFixed(0)}% | 
+                        期待値: {typeof strategy.expectedValue === 'number' ? 
+                          strategy.expectedValue.toFixed(2) : strategy.expectedValue}
+                        {strategy.profitMargin && ` (利益率${strategy.profitMargin >= 0 ? '+' : ''}${strategy.profitMargin}%)`}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ color: '#6c757d', fontStyle: 'italic', padding: '10px' }}>
+                  現在の条件では明確な推奨戦略がありません
+                </div>
+              )}
+            </div>
+          )}
+        </div>
       )}
 
       <button type="submit" style={{ marginTop: 20, padding: '8px 16px' }}>
