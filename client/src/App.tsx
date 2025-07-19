@@ -3,6 +3,7 @@ import RaceForm from './components/RaceForm';
 import RaceList from './components/RaceList';
 import Statistics from './components/Statistics';
 import AdvancedStatistics from './components/AdvancedStatistics';
+import RaceComposition from './components/RaceComposition';
 
 function App() {
   return (
@@ -11,6 +12,8 @@ function App() {
       <RaceForm />
       <hr />
       <RaceList />
+      <hr />
+      <RaceComposition />
       <hr />
       <Statistics />
       <hr />

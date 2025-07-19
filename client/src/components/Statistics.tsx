@@ -1,10 +1,32 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { StatsData } from '../types';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+} from 'chart.js';
+import { Bar, Pie } from 'react-chartjs-2';
+
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend,
+  ArcElement
+);
 
 const Statistics: React.FC = () => {
   const [stats, setStats] = useState<StatsData>({});
   const [loading, setLoading] = useState(false);
+  const [showGraphs, setShowGraphs] = useState(false);
   
   // フィルタ状態（複数選択対応）
   const [filters, setFilters] = useState({
@@ -105,6 +127,103 @@ const Statistics: React.FC = () => {
 
   const overallStats = getOverallStats();
 
+  // グラフ用データ準備
+  const prepareBarChartData = () => {
+    const labels = sortedPopularities.map(p => `${p}番人気`);
+    const winRateData = sortedPopularities.map(p => parseFloat(stats[p]?.winRate || '0'));
+    const placeRateData = sortedPopularities.map(p => parseFloat(stats[p]?.placeRate || '0'));
+    const showRateData = sortedPopularities.map(p => parseFloat(stats[p]?.showRate || '0'));
+
+    return {
+      labels,
+      datasets: [
+        {
+          label: '勝率',
+          data: winRateData,
+          backgroundColor: 'rgba(255, 99, 132, 0.6)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 1,
+        },
+        {
+          label: '連対率',
+          data: placeRateData,
+          backgroundColor: 'rgba(54, 162, 235, 0.6)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1,
+        },
+        {
+          label: '複勝率',
+          data: showRateData,
+          backgroundColor: 'rgba(255, 206, 86, 0.6)',
+          borderColor: 'rgba(255, 206, 86, 1)',
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
+
+  const preparePieChartData = () => {
+    const winData = sortedPopularities.slice(0, 5).map(p => stats[p]?.wins || 0);
+    const labels = sortedPopularities.slice(0, 5).map(p => `${p}番人気`);
+    
+    return {
+      labels,
+      datasets: [
+        {
+          label: '勝数',
+          data: winData,
+          backgroundColor: [
+            'rgba(255, 99, 132, 0.6)',
+            'rgba(54, 162, 235, 0.6)',
+            'rgba(255, 206, 86, 0.6)',
+            'rgba(75, 192, 192, 0.6)',
+            'rgba(153, 102, 255, 0.6)',
+          ],
+          borderColor: [
+            'rgba(255, 99, 132, 1)',
+            'rgba(54, 162, 235, 1)',
+            'rgba(255, 206, 86, 1)',
+            'rgba(75, 192, 192, 1)',
+            'rgba(153, 102, 255, 1)',
+          ],
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
+
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: '人気別統計グラフ',
+      },
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+      },
+    },
+  };
+
+  const pieChartOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        position: 'top' as const,
+      },
+      title: {
+        display: true,
+        text: '上位5番人気の勝数分布',
+      },
+    },
+  };
+
   const renderFilters = () => (
     <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
       <h4 style={{ marginTop: 0 }}>フィルタ条件</h4>
@@ -174,7 +293,7 @@ const Statistics: React.FC = () => {
           </div>
         </div>
       </div>
-      <div style={{ display: 'flex', gap: '10px' }}>
+      <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
         <button 
           onClick={clearFilters}
           style={{ padding: '5px 15px', backgroundColor: '#6c757d', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
@@ -187,6 +306,12 @@ const Statistics: React.FC = () => {
           style={{ padding: '5px 15px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
         >
           {loading ? '更新中...' : '統計を更新'}
+        </button>
+        <button 
+          onClick={() => setShowGraphs(!showGraphs)}
+          style={{ padding: '5px 15px', backgroundColor: showGraphs ? '#28a745' : '#17a2b8', color: 'white', border: 'none', borderRadius: '3px', cursor: 'pointer' }}
+        >
+          {showGraphs ? 'テーブル表示' : 'グラフ表示'}
         </button>
       </div>
       {Object.values(filters).some(v => Array.isArray(v) && v.length > 0) && (
@@ -220,7 +345,25 @@ const Statistics: React.FC = () => {
             </p>
           </div>
 
-          {/* 人気別詳細統計 */}
+          {/* グラフ表示エリア */}
+          {showGraphs && (
+            <div style={{ marginBottom: '30px' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '20px', marginBottom: '20px' }}>
+                {/* 棒グラフ */}
+                <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', border: '1px solid #ddd' }}>
+                  <Bar data={prepareBarChartData()} options={chartOptions} />
+                </div>
+                
+                {/* 円グラフ */}
+                <div style={{ backgroundColor: 'white', padding: '20px', borderRadius: '8px', border: '1px solid #ddd' }}>
+                  <Pie data={preparePieChartData()} options={pieChartOptions} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* 人気別詳細統計テーブル */}
+          {!showGraphs && (
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
             <thead>
               <tr style={{ backgroundColor: '#e9ecef' }}>
@@ -273,13 +416,17 @@ const Statistics: React.FC = () => {
               })}
             </tbody>
           </table>
+          )}
 
           <div style={{ marginTop: '15px', fontSize: '14px', color: '#666' }}>
             <p>
               <strong>見方:</strong> 
-              緑背景は勝率20%超の人気、期待値は単勝的中時に必要な最低オッズの目安です。複数選択したフィルタ条件のいずれかに該当するレースのみで統計を計算しています。
+              {showGraphs ? 
+                '棒グラフは人気別の勝率・連対率・複勝率を比較表示。円グラフは上位5番人気の勝数分布を表示。フィルタ条件で絞り込み可能。' :
+                '緑背景は勝率20%超の人気、期待値は単勝的中時に必要な最低オッズの目安です。複数選択したフィルタ条件のいずれかに該当するレースのみで統計を計算しています。'
+              }
               <br />
-              例: 1番人気の勝率が30%なら、3.3倍以上のオッズがあれば期待値プラス
+              {!showGraphs && '例: 1番人気の勝率が30%なら、3.3倍以上のオッズがあれば期待値プラス'}
               <br />
               <small>※ 人気データが1～18番人気の範囲外の場合は統計から除外されます</small>
             </p>
