@@ -184,35 +184,35 @@ class LocalStorageApi {
   }
 
   // 統計ベース重み計算
-  async calculateOptimalWeights(): Promise<{ popularity: number; jockey: number; distance: number; base: number }> {
+  async calculateOptimalWeights(): Promise<{ popularity: number; jockey: number; odds: number; base: number }> {
     try {
       const races = await this.getRaces();
       
       // 各要素の精度を計算
       const popularityAccuracy = this.calculatePopularityAccuracy(races);
       const jockeyAccuracy = this.calculateJockeyAccuracy(races);
-      const distanceAccuracy = this.calculateDistanceAccuracy(races);
+      const oddsAccuracy = this.calculateOddsAccuracy(races);
       const baseAccuracy = 0.05; // ベース値
 
       console.log('📊 精度分析結果:', {
         人気: `${(popularityAccuracy * 100).toFixed(1)}%`,
         騎手: `${(jockeyAccuracy * 100).toFixed(1)}%`,
-        距離: `${(distanceAccuracy * 100).toFixed(1)}%`
+        オッズ: `${(oddsAccuracy * 100).toFixed(1)}%`
       });
 
       // 重みを正規化（合計1.0になるように調整）
-      const total = popularityAccuracy + jockeyAccuracy + distanceAccuracy + baseAccuracy;
+      const total = popularityAccuracy + jockeyAccuracy + oddsAccuracy + baseAccuracy;
       
       return {
         popularity: popularityAccuracy / total,
         jockey: jockeyAccuracy / total,
-        distance: distanceAccuracy / total,
+        odds: oddsAccuracy / total,
         base: baseAccuracy / total
       };
     } catch (error) {
       console.error('重み計算エラー:', error);
       // エラー時はデフォルト値を返す
-      return { popularity: 0.4, jockey: 0.3, distance: 0.2, base: 0.1 };
+      return { popularity: 0.4, jockey: 0.3, odds: 0.2, base: 0.1 };
     }
   }
 
@@ -221,7 +221,7 @@ class LocalStorageApi {
     surface: string;
     distance: number;
     course: string;
-  }): Promise<{ popularity: number; jockey: number; distance: number; base: number }> {
+  }): Promise<{ popularity: number; jockey: number; odds: number; base: number }> {
     try {
       const races = await this.getRaces();
       
@@ -263,14 +263,14 @@ class LocalStorageApi {
       // 類似レースから精度計算
       const popularityAccuracy = this.calculatePopularityAccuracy(similarRaces);
       const jockeyAccuracy = this.calculateJockeyAccuracy(similarRaces);
-      const distanceAccuracy = this.calculateDistanceAccuracy(similarRaces);
+      const oddsAccuracy = this.calculateOddsAccuracy(similarRaces);
       const baseAccuracy = 0.05;
 
       // 条件別補正を適用
       const adjustedWeights = this.applyConditionAdjustments({
         popularity: popularityAccuracy,
         jockey: jockeyAccuracy,
-        distance: distanceAccuracy,
+        odds: oddsAccuracy,
         base: baseAccuracy
       }, raceConditions);
 
@@ -280,7 +280,7 @@ class LocalStorageApi {
       return {
         popularity: adjustedWeights.popularity / total,
         jockey: adjustedWeights.jockey / total,
-        distance: adjustedWeights.distance / total,
+        odds: adjustedWeights.odds / total,
         base: adjustedWeights.base / total
       };
     } catch (error) {
@@ -295,13 +295,13 @@ class LocalStorageApi {
     if (conditions.surface === '芝') {
       if (conditions.distance <= 1400) {
         // 芝短距離: スピード重視（人気・騎手重要）
-        return { popularity: 0.45, jockey: 0.35, distance: 0.15, base: 0.05 };
+        return { popularity: 0.45, jockey: 0.35, odds: 0.15, base: 0.05 };
       } else if (conditions.distance >= 2400) {
         // 芝長距離: スタミナ・騎手技術重視
-        return { popularity: 0.3, jockey: 0.45, distance: 0.2, base: 0.05 };
+        return { popularity: 0.3, jockey: 0.45, odds: 0.2, base: 0.05 };
       } else {
         // 芝中距離: バランス型
-        return { popularity: 0.4, jockey: 0.35, distance: 0.2, base: 0.05 };
+        return { popularity: 0.4, jockey: 0.35, odds: 0.2, base: 0.05 };
       }
     }
     
@@ -309,20 +309,20 @@ class LocalStorageApi {
     else if (conditions.surface === 'ダート') {
       if (conditions.distance <= 1400) {
         // ダート短距離: パワー・人気重視
-        return { popularity: 0.5, jockey: 0.3, distance: 0.15, base: 0.05 };
+        return { popularity: 0.5, jockey: 0.3, odds: 0.15, base: 0.05 };
       } else {
         // ダート中長距離: 騎手・持続力重視
-        return { popularity: 0.35, jockey: 0.4, distance: 0.2, base: 0.05 };
+        return { popularity: 0.35, jockey: 0.4, odds: 0.2, base: 0.05 };
       }
     }
     
     // デフォルト
-    return { popularity: 0.4, jockey: 0.3, distance: 0.2, base: 0.1 };
+    return { popularity: 0.4, jockey: 0.3, odds: 0.2, base: 0.1 };
   }
 
   // 条件別補正の適用
   private applyConditionAdjustments(
-    baseWeights: { popularity: number; jockey: number; distance: number; base: number },
+    baseWeights: { popularity: number; jockey: number; odds: number; base: number },
     conditions: { surface: string; distance: number; course: string }
   ) {
     let adjustedWeights = { ...baseWeights };
@@ -337,7 +337,7 @@ class LocalStorageApi {
       // 短距離では人気の重要度を上げる
       else if (conditions.distance <= 1400) {
         adjustedWeights.popularity *= 1.1;
-        adjustedWeights.distance *= 0.9;
+        adjustedWeights.odds *= 0.9;
       }
     }
 
@@ -346,7 +346,7 @@ class LocalStorageApi {
       // ダートでは人気がより重要
       adjustedWeights.popularity *= 1.15;
       adjustedWeights.jockey *= 1.05;
-      adjustedWeights.distance *= 0.95;
+      adjustedWeights.odds *= 0.95;
     }
 
     // 重賞コースでの補正（東京・阪神・京都・中山）
@@ -658,7 +658,7 @@ class LocalStorageApi {
       const weights = customWeights || {
         popularity: 0.4,
         jockey: 0.3,
-        distance: 0.2,
+        odds: 0.2,
         base: 0.1
       };
 
@@ -682,7 +682,7 @@ class LocalStorageApi {
 
         // オッズによる調整
         const oddsScore = Math.max(0, (1 - Math.log(horse.odds) / Math.log(20)));
-        score += weights.distance * oddsScore;
+        score += weights.odds * oddsScore;
 
         // 正規化
         const normalizedScore = Math.min(1, Math.max(0, score));
@@ -694,7 +694,7 @@ class LocalStorageApi {
           factors: {
             popularity: { rate: popularityScore, weight: weights.popularity },
             jockey: { rate: jockeyData ? parseFloat(jockeyData.winRate) / 100 : 0, weight: weights.jockey },
-            distance: { rate: oddsScore, weight: weights.distance }
+            odds: { rate: oddsScore, weight: weights.odds }
           }
         };
       });
@@ -767,8 +767,8 @@ class LocalStorageApi {
     return Math.min(0.5, avgWinRate * 2); // 最大50%
   }
 
-  // 距離精度計算（オッズとの相関性を見る）
-  private calculateDistanceAccuracy(races: Race[]): number {
+  // オッズ精度計算（オッズの的中精度を計算）
+  private calculateOddsAccuracy(races: Race[]): number {
     const racesWithResults = races.filter(race => race.result);
     if (racesWithResults.length === 0) return 0.15; // デフォルト値
 

@@ -68,13 +68,13 @@ const levels = ['新馬', '未勝利', '500万下', '1000万下', '1600万下', 
 
 // プリセット重み戦略
 const presetWeights = {
-  custom: { name: 'カスタム', popularity: 0.4, jockey: 0.3, distance: 0.2, base: 0.1 },
-  conservative: { name: '保守的戦略', popularity: 0.6, jockey: 0.2, distance: 0.1, base: 0.1 },
-  balanced: { name: 'バランス戦略', popularity: 0.4, jockey: 0.3, distance: 0.2, base: 0.1 },
-  aggressive: { name: '攻撃的戦略', popularity: 0.2, jockey: 0.4, distance: 0.3, base: 0.1 },
-  darkhorse: { name: '穴狙い戦略', popularity: 0.1, jockey: 0.4, distance: 0.4, base: 0.1 },
-  optimal: { name: '🧠 AI最適化', popularity: 0.4, jockey: 0.3, distance: 0.2, base: 0.1 },
-  condition: { name: '🎯 条件別最適化', popularity: 0.4, jockey: 0.3, distance: 0.2, base: 0.1 }
+  custom: { name: 'カスタム', popularity: 0.4, jockey: 0.3, odds: 0.2, base: 0.1 },
+  conservative: { name: '保守的戦略', popularity: 0.6, jockey: 0.2, odds: 0.1, base: 0.1 },
+  balanced: { name: 'バランス戦略', popularity: 0.4, jockey: 0.3, odds: 0.2, base: 0.1 },
+  aggressive: { name: '攻撃的戦略', popularity: 0.2, jockey: 0.4, odds: 0.3, base: 0.1 },
+  darkhorse: { name: '穴狙い戦略', popularity: 0.1, jockey: 0.4, odds: 0.4, base: 0.1 },
+  optimal: { name: '🧠 AI最適化', popularity: 0.4, jockey: 0.3, odds: 0.2, base: 0.1 },
+  condition: { name: '🎯 条件別最適化', popularity: 0.4, jockey: 0.3, odds: 0.2, base: 0.1 }
 };
 
 const RaceForm = () => {
@@ -94,7 +94,7 @@ const RaceForm = () => {
   const [customWeights, setCustomWeights] = useState({
     popularity: 0.4,
     jockey: 0.3,
-    distance: 0.2,
+    odds: 0.2,
     base: 0.1
   });
   const [selectedPreset, setSelectedPreset] = useState<keyof typeof presetWeights>('balanced');
@@ -356,7 +356,7 @@ const RaceForm = () => {
       setCustomWeights({
         popularity: preset.popularity,
         jockey: preset.jockey,
-        distance: preset.distance,
+        odds: preset.odds,
         base: preset.base
       });
       setOptimizationResult('');
@@ -370,7 +370,7 @@ const RaceForm = () => {
       const optimalWeights = await localStorageApi.calculateOptimalWeights();
       setCustomWeights(optimalWeights);
       
-      const result = `📊 AI分析完了！\n人気: ${(optimalWeights.popularity * 100).toFixed(1)}% | 騎手: ${(optimalWeights.jockey * 100).toFixed(1)}% | 距離: ${(optimalWeights.distance * 100).toFixed(1)}% | ベース: ${(optimalWeights.base * 100).toFixed(1)}%`;
+      const result = `📊 AI分析完了！\n人気: ${(optimalWeights.popularity * 100).toFixed(1)}% | 騎手: ${(optimalWeights.jockey * 100).toFixed(1)}% | オッズ: ${(optimalWeights.odds * 100).toFixed(1)}% | ベース: ${(optimalWeights.base * 100).toFixed(1)}%`;
       setOptimizationResult(result);
       
       console.log('🧠 AI最適化完了:', optimalWeights);
@@ -401,7 +401,7 @@ const RaceForm = () => {
       const conditionWeights = await localStorageApi.calculateConditionBasedWeights(raceConditions);
       setCustomWeights(conditionWeights);
       
-      const result = `🎯 条件別分析完了！\\n${raceInfo.surface} ${raceInfo.distance}m (${raceInfo.course}) に最適化\\n人気: ${(conditionWeights.popularity * 100).toFixed(1)}% | 騎手: ${(conditionWeights.jockey * 100).toFixed(1)}% | 距離: ${(conditionWeights.distance * 100).toFixed(1)}% | ベース: ${(conditionWeights.base * 100).toFixed(1)}%\\n\\n💡 ブラウザの開発者ツール(F12)のコンソールで詳細な分析情報をご確認いただけます`;
+      const result = `🎯 条件別分析完了！\\n${raceInfo.surface} ${raceInfo.distance}m (${raceInfo.course}) に最適化\\n人気: ${(conditionWeights.popularity * 100).toFixed(1)}% | 騎手: ${(conditionWeights.jockey * 100).toFixed(1)}% | オッズ: ${(conditionWeights.odds * 100).toFixed(1)}% | ベース: ${(conditionWeights.base * 100).toFixed(1)}%\\n\\n💡 ブラウザの開発者ツール(F12)のコンソールで詳細な分析情報をご確認いただけます`;
       setOptimizationResult(result);
       
       console.log('🎯 条件別最適化完了:', conditionWeights);
@@ -427,7 +427,7 @@ const RaceForm = () => {
     setCustomWeights({
       popularity: 0.4,
       jockey: 0.3,
-      distance: 0.2,
+      odds: 0.2,
       base: 0.1
     });
   };
@@ -801,7 +801,7 @@ const RaceForm = () => {
                       <label style={{ display: 'block', fontSize: '14px', marginBottom: '4px' }}>
                         {factor === 'popularity' ? '人気' : 
                          factor === 'jockey' ? '騎手' : 
-                         factor === 'distance' ? '距離' : 'ベース'}: {(weight * 100).toFixed(0)}%
+                         factor === 'odds' ? 'オッズ' : 'ベース'}: {(weight * 100).toFixed(0)}%
                       </label>
                       <input
                         type="range"
