@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import { localStorageApi } from '../services/localStorageApi';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -62,8 +62,8 @@ const AdvancedStatistics: React.FC = () => {
   const fetchJockeyStats = async (filterParams = {}) => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/statistics/jockey', { params: filterParams });
-      setJockeyStats(response.data);
+      const statsData = await localStorageApi.getJockeyStatistics(filterParams);
+      setJockeyStats(statsData);
     } catch (error) {
       console.error('騎手別統計取得エラー:', error);
     }
@@ -72,8 +72,7 @@ const AdvancedStatistics: React.FC = () => {
   
   const fetchFilterOptions = async () => {
     try {
-      const response = await axios.get('/api/race');
-      const races = response.data;
+      const races = await localStorageApi.getRaces();
       
       const courses = Array.from(new Set(races.map((race: any) => race.course).filter(Boolean))) as string[];
       const surfaces = Array.from(new Set(races.map((race: any) => race.surface).filter(Boolean))) as string[];

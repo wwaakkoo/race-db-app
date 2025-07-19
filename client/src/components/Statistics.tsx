@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import { StatsData } from '../types';
+import { localStorageApi } from '../services/localStorageApi';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -24,7 +23,7 @@ ChartJS.register(
 );
 
 const Statistics: React.FC = () => {
-  const [stats, setStats] = useState<StatsData>({});
+  const [stats, setStats] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const [showGraphs, setShowGraphs] = useState(false);
   
@@ -47,8 +46,8 @@ const Statistics: React.FC = () => {
   const fetchStats = async (filterParams = {}) => {
     setLoading(true);
     try {
-      const response = await axios.get('/api/statistics', { params: filterParams });
-      setStats(response.data);
+      const statsData = await localStorageApi.getStatistics(filterParams);
+      setStats(statsData);
     } catch (error) {
       console.error('統計取得エラー:', error);
     }
@@ -57,8 +56,7 @@ const Statistics: React.FC = () => {
   
   const fetchFilterOptions = async () => {
     try {
-      const response = await axios.get('/api/race');
-      const races = response.data;
+      const races = await localStorageApi.getRaces();
       
       const courses = Array.from(new Set(races.map((race: any) => race.course).filter(Boolean))) as string[];
       const surfaces = Array.from(new Set(races.map((race: any) => race.surface).filter(Boolean))) as string[];
@@ -105,23 +103,23 @@ const Statistics: React.FC = () => {
     .map(p => p.toString());
 
   const getTotalRaces = () => {
-    return Object.values(stats).reduce((sum, stat) => sum + stat.wins, 0);
+    return Object.values(stats).reduce((sum, stat: any) => sum + stat.wins, 0);
   };
 
   const getOverallStats = () => {
-    const totalRuns = Object.values(stats).reduce((sum, stat) => sum + stat.total, 0);
-    const totalWins = Object.values(stats).reduce((sum, stat) => sum + stat.wins, 0);
-    const totalPlaces = Object.values(stats).reduce((sum, stat) => sum + stat.places, 0);
-    const totalShows = Object.values(stats).reduce((sum, stat) => sum + stat.shows, 0);
+    const totalRuns = Object.values(stats).reduce((sum, stat: any) => sum + stat.total, 0);
+    const totalWins = Object.values(stats).reduce((sum, stat: any) => sum + stat.wins, 0);
+    const totalPlaces = Object.values(stats).reduce((sum, stat: any) => sum + stat.places, 0);
+    const totalShows = Object.values(stats).reduce((sum, stat: any) => sum + stat.shows, 0);
     
     return {
       totalRuns,
       totalWins,
       totalPlaces,
       totalShows,
-      overallWinRate: totalRuns > 0 ? (totalWins / totalRuns * 100).toFixed(1) : "0.0",
-      overallPlaceRate: totalRuns > 0 ? (totalPlaces / totalRuns * 100).toFixed(1) : "0.0",
-      overallShowRate: totalRuns > 0 ? (totalShows / totalRuns * 100).toFixed(1) : "0.0"
+      overallWinRate: (totalRuns as number) > 0 ? ((totalWins as number) / (totalRuns as number) * 100).toFixed(1) : "0.0",
+      overallPlaceRate: (totalRuns as number) > 0 ? ((totalPlaces as number) / (totalRuns as number) * 100).toFixed(1) : "0.0",
+      overallShowRate: (totalRuns as number) > 0 ? ((totalShows as number) / (totalRuns as number) * 100).toFixed(1) : "0.0"
     };
   };
 
@@ -336,13 +334,9 @@ const Statistics: React.FC = () => {
           {/* 全体統計サマリー */}
           <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
             <h3>全体統計サマリー</h3>
-            <p>
-              <strong>総レース数:</strong> {getTotalRaces()}レース | 
-              <strong> 総出走数:</strong> {overallStats.totalRuns}回 | 
-              <strong> 全体勝率:</strong> {overallStats.overallWinRate}% | 
-              <strong> 全体連対率:</strong> {overallStats.overallPlaceRate}% | 
-              <strong> 全体複勝率:</strong> {overallStats.overallShowRate}%
-            </p>
+            <div>
+              {`総レース数: ${getTotalRaces()}レース | 総出走数: ${overallStats.totalRuns}回 | 全体勝率: ${overallStats.overallWinRate}% | 全体連対率: ${overallStats.overallPlaceRate}% | 全体複勝率: ${overallStats.overallShowRate}%`}
+            </div>
           </div>
 
           {/* グラフ表示エリア */}

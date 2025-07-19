@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { localStorageApi } from '../services/localStorageApi';
 
 const DataManager: React.FC = () => {
   const [importing, setImporting] = useState(false);
@@ -11,11 +11,9 @@ const DataManager: React.FC = () => {
   const handleExportJSON = async () => {
     setExporting(true);
     try {
-      const response = await axios.get('/api/export/json', {
-        responseType: 'blob'
-      });
+      const exportData = await localStorageApi.exportData();
       
-      const blob = new Blob([response.data], { type: 'application/json' });
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -39,11 +37,49 @@ const DataManager: React.FC = () => {
   const handleExportCSV = async () => {
     setExporting(true);
     try {
-      const response = await axios.get('/api/export/csv', {
-        responseType: 'blob'
+      const races = await localStorageApi.getRaces();
+      
+      // CSV形式に変換
+      const csvHeaders = [
+        'レースID', '開催日', 'コース', '距離', '馬場', '馬場状態', 'レベル',
+        '馬名', '枠番', '馬番', '性別', '年齢', '斤量', '騎手', 'オッズ', '人気',
+        '1着', '2着', '3着'
+      ];
+      
+      let csvContent = csvHeaders.join(',') + '\n';
+      
+      races.forEach(race => {
+        const result1 = race.result ? race.result['1着'] || '' : '';
+        const result2 = race.result ? race.result['2着'] || '' : '';
+        const result3 = race.result ? race.result['3着'] || '' : '';
+        
+        race.horses.forEach(horse => {
+          const row = [
+            race.id,
+            race.date,
+            race.course,
+            race.distance,
+            race.surface,
+            race.condition,
+            race.level || '',
+            horse.name,
+            horse.frameNumber,
+            horse.horseNumber,
+            horse.sex,
+            horse.age,
+            horse.weight,
+            horse.jockey,
+            horse.odds,
+            horse.popularity,
+            result1,
+            result2,
+            result3
+          ];
+          csvContent += row.map(field => `"${field}"`).join(',') + '\n';
+        });
       });
       
-      const blob = new Blob([response.data], { type: 'text/csv;charset=utf-8;' });
+      const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' });
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -55,7 +91,7 @@ const DataManager: React.FC = () => {
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
       
-      console.log('CSVエクスポート完了');
+      console.log('✅ CSVエクスポート完了');
     } catch (error) {
       console.error('CSVエクスポートエラー:', error);
       alert('CSVエクスポートに失敗しました');
@@ -86,10 +122,10 @@ const DataManager: React.FC = () => {
       const fileContent = await importFile.text();
       const importData = JSON.parse(fileContent);
       
-      const response = await axios.post('/api/import/json', importData);
+      const result = await localStorageApi.importData(importData);
       
       setImportResult(
-        `インポート完了: ${response.data.imported}件追加, ${response.data.skipped}件スキップ (総件数: ${response.data.total}件)`
+        `インポート完了: ${result.imported}件追加, ${result.skipped}件スキップ (総件数: ${result.total}件)`
       );
       
       // ファイル選択をリセット

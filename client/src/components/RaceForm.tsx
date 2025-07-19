@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
+import { localStorageApi } from '../services/localStorageApi';
 
 interface Prediction {
   horse: Horse;
@@ -276,9 +276,9 @@ const RaceForm = () => {
         horses: horses
       };
 
-      const response = await axios.post('/api/race', raceData);
+      const response = await localStorageApi.saveRace(raceData);
   
-      console.log('✅ 保存成功:', response.data);
+      console.log('✅ 保存成功:', response);
       alert('レース情報を保存しました！');
       
       // フォームリセット
@@ -312,13 +312,13 @@ const RaceForm = () => {
         horses: horses
       };
 
-      const requestBody = {
-        raceData: raceData,
-        weights: customWeights
-      };
-
-      const response = await axios.post('http://localhost:3001/api/analysis/strategy', requestBody);
-      setPrediction(response.data);
+      const prediction = await localStorageApi.predictRace(raceData, customWeights);
+      setPrediction({
+        raceAnalysis: prediction,
+        recommendedStrategies: [],
+        riskLevel: prediction.averageConfidence > 0.8 ? 'low' : 
+                   prediction.averageConfidence > 0.6 ? 'medium' : 'high'
+      });
     } catch (error) {
       console.error('❌ 予測エラー:', error);
       alert('予測処理に失敗しました');

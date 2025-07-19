@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Race } from '../types';
+import { localStorageApi, Race } from '../services/localStorageApi';
 import ResultForm from './ResultForm';
 
 const RaceList = () => {
@@ -13,14 +12,13 @@ const RaceList = () => {
     level: ''
   });
 
-  const fetchRaces = () => {
-    axios.get('/api/race')
-      .then(res => {
-        setRaces(res.data);
-      })
-      .catch(err => {
-        console.error('レース一覧の取得に失敗:', err);
-      });
+  const fetchRaces = async () => {
+    try {
+      const raceList = await localStorageApi.getRaces();
+      setRaces(raceList);
+    } catch (err) {
+      console.error('レース一覧の取得に失敗:', err);
+    }
   };
 
   useEffect(() => {

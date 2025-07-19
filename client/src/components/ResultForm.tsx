@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
-import axios from 'axios';
-import { Race, RaceResult } from '../types';
+import { localStorageApi, Race } from '../services/localStorageApi';
 
 interface ResultFormProps {
   race: Race;
@@ -9,7 +8,7 @@ interface ResultFormProps {
 }
 
 const ResultForm: React.FC<ResultFormProps> = ({ race, onResultUpdated, onCancel }) => {
-  const [result, setResult] = useState<RaceResult>(race.result || {});
+  const [result, setResult] = useState<any>(race.result || {});
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -17,7 +16,7 @@ const ResultForm: React.FC<ResultFormProps> = ({ race, onResultUpdated, onCancel
     setLoading(true);
 
     try {
-      await axios.put(`/api/race/${race.id}/result`, result);
+      await localStorageApi.updateResult(race.id, result);
       onResultUpdated();
     } catch (error) {
       console.error('結果登録エラー:', error);
@@ -27,7 +26,7 @@ const ResultForm: React.FC<ResultFormProps> = ({ race, onResultUpdated, onCancel
   };
 
   const handleResultChange = (position: '1着' | '2着' | '3着', value: string) => {
-    setResult(prev => ({
+    setResult((prev: any) => ({
       ...prev,
       [position]: value
     }));
