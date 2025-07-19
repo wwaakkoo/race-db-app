@@ -30,6 +30,12 @@ const RaceList = () => {
     setEditingRaceId(null);
   };
 
+  const getHorseDisplayForResult = (race: Race, horseName?: string) => {
+    if (!horseName) return '';
+    const horse = race.horses.find(h => h.name === horseName);
+    return horse ? `${horse.horseNumber}番 ${horseName}` : horseName;
+  };
+
   return (
     <div>
       <h2>保存済みレース一覧</h2>
@@ -43,7 +49,9 @@ const RaceList = () => {
             
             {race.result ? (
               <div style={{ marginTop: '5px', color: '#666' }}>
-                結果: 1着 {race.result["1着"]} / 2着 {race.result["2着"]} / 3着 {race.result["3着"]}
+                結果: 1着 {getHorseDisplayForResult(race, race.result["1着"])} / 
+                2着 {getHorseDisplayForResult(race, race.result["2着"])} / 
+                3着 {getHorseDisplayForResult(race, race.result["3着"])}
               </div>
             ) : (
               <div style={{ marginTop: '5px', color: '#999' }}>

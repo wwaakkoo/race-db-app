@@ -33,13 +33,24 @@ const ResultForm: React.FC<ResultFormProps> = ({ race, onResultUpdated, onCancel
     }));
   };
 
+  const getHorseDisplayText = (horse: any) => {
+    return `${horse.horseNumber}番 ${horse.name}`;
+  };
+
+  const getSelectedHorseNumbers = () => {
+    const selected = [];
+    if (result["1着"]) selected.push(result["1着"]);
+    if (result["2着"]) selected.push(result["2着"]);
+    return selected;
+  };
+
   return (
     <div style={{ margin: '10px 0', padding: '15px', border: '1px solid #ddd', borderRadius: '5px' }}>
       <h4>レース結果入力 - {race.course} {race.level}</h4>
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: '10px' }}>
           <label>
-            1着馬名:
+            1着:
             <select 
               value={result["1着"] || ""} 
               onChange={(e) => handleResultChange("1着", e.target.value)}
@@ -49,7 +60,7 @@ const ResultForm: React.FC<ResultFormProps> = ({ race, onResultUpdated, onCancel
               <option value="">選択してください</option>
               {race.horses.map(horse => (
                 <option key={horse.horseNumber} value={horse.name}>
-                  {horse.name}
+                  {getHorseDisplayText(horse)}
                 </option>
               ))}
             </select>
@@ -58,7 +69,7 @@ const ResultForm: React.FC<ResultFormProps> = ({ race, onResultUpdated, onCancel
         
         <div style={{ marginBottom: '10px' }}>
           <label>
-            2着馬名:
+            2着:
             <select 
               value={result["2着"] || ""} 
               onChange={(e) => handleResultChange("2着", e.target.value)}
@@ -68,7 +79,7 @@ const ResultForm: React.FC<ResultFormProps> = ({ race, onResultUpdated, onCancel
               <option value="">選択してください</option>
               {race.horses.filter(horse => horse.name !== result["1着"]).map(horse => (
                 <option key={horse.horseNumber} value={horse.name}>
-                  {horse.name}
+                  {getHorseDisplayText(horse)}
                 </option>
               ))}
             </select>
@@ -77,7 +88,7 @@ const ResultForm: React.FC<ResultFormProps> = ({ race, onResultUpdated, onCancel
         
         <div style={{ marginBottom: '10px' }}>
           <label>
-            3着馬名:
+            3着:
             <select 
               value={result["3着"] || ""} 
               onChange={(e) => handleResultChange("3着", e.target.value)}
@@ -89,7 +100,7 @@ const ResultForm: React.FC<ResultFormProps> = ({ race, onResultUpdated, onCancel
                 horse.name !== result["1着"] && horse.name !== result["2着"]
               ).map(horse => (
                 <option key={horse.horseNumber} value={horse.name}>
-                  {horse.name}
+                  {getHorseDisplayText(horse)}
                 </option>
               ))}
             </select>

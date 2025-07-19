@@ -6,7 +6,6 @@ const fs = require('fs');
 const path = require('path');
 
 const DATA_PATH = path.join(__dirname, 'races.json');
-const BETS_PATH = path.join(__dirname, 'bets.json');
 
 app.use(cors());
 app.use(express.json());
@@ -172,81 +171,6 @@ app.put('/api/race/:id/result', (req, res) => {
         res.json({ message: 'レース結果が更新されました', race: races[raceIndex] });
       });
 
-    } catch (parseErr) {
-      console.error('❌ JSONパースエラー:', parseErr);
-      res.status(500).json({ error: 'JSONパースに失敗しました' });
-    }
-  });
-});
-
-// ✅ POST: 馬券記録を保存
-app.post('/api/bets', (req, res) => {
-  const betRecord = req.body;
-  console.log('📝 馬券記録保存:', betRecord);
-
-  fs.readFile(BETS_PATH, 'utf8', (err, data) => {
-    let bets = [];
-    if (!err && data) {
-      try {
-        bets = JSON.parse(data);
-      } catch (e) {
-        console.error('JSONパースエラー:', e);
-      }
-    }
-
-    // 新しい馬券記録を追加
-    const newBet = {
-      ...betRecord,
-      id: Date.now().toString() + Math.random().toString(36).substring(2, 11),
-      timestamp: new Date().toISOString()
-    };
-
-    bets.push(newBet);
-
-    fs.writeFile(BETS_PATH, JSON.stringify(bets, null, 2), (writeErr) => {
-      if (writeErr) {
-        console.error('❌ 馬券記録保存失敗:', writeErr);
-        return res.status(500).json({ error: '保存に失敗しました' });
-      }
-      
-      console.log('✅ 馬券記録保存成功');
-      res.json({ message: '馬券記録が保存されました', bet: newBet });
-    });
-  });
-});
-
-// ✅ GET: 馬券記録サマリーを取得
-app.get('/api/bets/summary', (_, res) => {
-  fs.readFile(BETS_PATH, 'utf8', (err, data) => {
-    if (err) {
-      // ファイルが存在しない場合は空のサマリーを返す
-      return res.json({
-        totalBets: 0,
-        totalPayout: 0,
-        totalProfit: 0,
-        winRate: 0,
-        records: []
-      });
-    }
-
-    try {
-      const bets = JSON.parse(data);
-      
-      const totalBets = bets.reduce((sum, bet) => sum + bet.betAmount, 0);
-      const totalPayout = bets.reduce((sum, bet) => sum + bet.payout, 0);
-      const totalProfit = totalPayout - totalBets;
-      const winningBets = bets.filter(bet => bet.payout > 0).length;
-      const winRate = bets.length > 0 ? (winningBets / bets.length) * 100 : 0;
-
-      const summary = {
-        totalBets,
-        totalPayout,
-        totalProfit,
-        winRate,
-        records: bets.reverse() // 新しい順で表示
-      };
-
-      res.json(summary);
     } catch (parseErr) {
       console.error('❌ JSONパースエラー:', parseErr);
       res.status(500).json({ error: 'JSONパースに失敗しました' });
