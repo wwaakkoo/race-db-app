@@ -66,6 +66,15 @@ const surfaces = ['芝', 'ダート'];
 const conditions = ['良', '稍重', '重', '不良'];
 const levels = ['新馬', '未勝利', '500万下', '1000万下', '1600万下', 'オープン', 'G3', 'G2', 'G1'];
 
+// プリセット重み戦略
+const presetWeights = {
+  custom: { name: 'カスタム', popularity: 0.4, jockey: 0.3, distance: 0.2, base: 0.1 },
+  conservative: { name: '保守的戦略', popularity: 0.6, jockey: 0.2, distance: 0.1, base: 0.1 },
+  balanced: { name: 'バランス戦略', popularity: 0.4, jockey: 0.3, distance: 0.2, base: 0.1 },
+  aggressive: { name: '攻撃的戦略', popularity: 0.2, jockey: 0.4, distance: 0.3, base: 0.1 },
+  darkhorse: { name: '穴狙い戦略', popularity: 0.1, jockey: 0.4, distance: 0.4, base: 0.1 }
+};
+
 const RaceForm = () => {
   const [raceInfo, setRaceInfo] = useState({
     date: '',
@@ -86,6 +95,7 @@ const RaceForm = () => {
     distance: 0.2,
     base: 0.1
   });
+  const [selectedPreset, setSelectedPreset] = useState<keyof typeof presetWeights>('balanced');
   const [showWeightSettings, setShowWeightSettings] = useState(false);
 
   // レース情報自動抽出
@@ -327,8 +337,23 @@ const RaceForm = () => {
     }
   };
 
-  // 重み設定の変更
+  // プリセット変更
+  const handlePresetChange = (presetKey: keyof typeof presetWeights) => {
+    setSelectedPreset(presetKey);
+    if (presetKey !== 'custom') {
+      const preset = presetWeights[presetKey];
+      setCustomWeights({
+        popularity: preset.popularity,
+        jockey: preset.jockey,
+        distance: preset.distance,
+        base: preset.base
+      });
+    }
+  };
+
+  // 重み設定の変更（カスタム時）
   const handleWeightChange = (factor: string, value: number) => {
+    setSelectedPreset('custom'); // カスタム変更時は自動でカスタムに切り替え
     setCustomWeights(prev => ({
       ...prev,
       [factor]: value
@@ -337,6 +362,7 @@ const RaceForm = () => {
 
   // 重みのリセット
   const resetWeights = () => {
+    setSelectedPreset('balanced');
     setCustomWeights({
       popularity: 0.4,
       jockey: 0.3,
@@ -645,6 +671,36 @@ const RaceForm = () => {
                 marginTop: '10px' 
               }}>
                 <h4>予測要素の重み設定</h4>
+                
+                {/* プリセット戦略選択 */}
+                <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#e3f2fd', borderRadius: '6px' }}>
+                  <h5 style={{ margin: '0 0 10px 0', color: '#1976d2' }}>🎯 予測戦略を選択</h5>
+                  <select
+                    value={selectedPreset}
+                    onChange={(e) => handlePresetChange(e.target.value as keyof typeof presetWeights)}
+                    style={{
+                      padding: '8px 12px',
+                      fontSize: '14px',
+                      borderRadius: '4px',
+                      border: '1px solid #ddd',
+                      marginBottom: '10px',
+                      minWidth: '200px'
+                    }}
+                  >
+                    {Object.entries(presetWeights).map(([key, preset]) => (
+                      <option key={key} value={key}>{preset.name}</option>
+                    ))}
+                  </select>
+                  
+                  <div style={{ fontSize: '12px', color: '#666', marginTop: '5px' }}>
+                    {selectedPreset === 'conservative' && '📊 人気を重視した安定志向の予測'}
+                    {selectedPreset === 'balanced' && '⚖️ バランスの取れた標準的な予測'}
+                    {selectedPreset === 'aggressive' && '🔥 騎手や距離データを重視した攻撃的予測'}
+                    {selectedPreset === 'darkhorse' && '🎲 穴馬を狙う高リスク・高リターン予測'}
+                    {selectedPreset === 'custom' && '🔧 あなた専用のカスタム設定'}
+                  </div>
+                </div>
+
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '10px' }}>
                   {Object.entries(customWeights).map(([factor, weight]) => (
                     <div key={factor}>
