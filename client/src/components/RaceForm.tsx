@@ -68,10 +68,10 @@ const RaceForm = () => {
     if (lines.length > 1) {
       const parts = lines[1].split('/').map(s => s.trim());
       for (const p of parts) {
-        // 馬場と距離
-        const surfaceDistanceMatch = p.match(/(芝|ダート)(\d+)m/);
+        // 馬場と距離（ダートは「ダ」で抽出、「ダート」で表示）
+        const surfaceDistanceMatch = p.match(/(芝|ダ)(\d+)m/);
         if (surfaceDistanceMatch) {
-          surface = surfaceDistanceMatch[1];
+          surface = surfaceDistanceMatch[1] === 'ダ' ? 'ダート' : surfaceDistanceMatch[1];
           distance = surfaceDistanceMatch[2];
           continue;
         }
@@ -103,7 +103,19 @@ const RaceForm = () => {
       }
     }
 
-    setRaceInfo(prev => ({ ...prev, course, distance, surface, condition, level }));
+    // ダートの場合も距離が自動設定されるように改善
+    setRaceInfo(prev => {
+      const newInfo = { ...prev, course, distance, surface, condition, level };
+      // 馬場に応じて距離選択肢をチェック
+      if (surface && distance) {
+        const distanceOptions = getDistanceOptions(surface);
+        if (!distanceOptions.includes(distance)) {
+          // 距離が選択肢にない場合は空にする
+          newInfo.distance = '';
+        }
+      }
+      return newInfo;
+    });
   };
 
   // 馬データ抽出関数
@@ -118,34 +130,52 @@ const RaceForm = () => {
       if (frameHorseMatch) {
         const frameNumber = parseInt(frameHorseMatch[1]);
         const horseNumber = parseInt(frameHorseMatch[2]);
-        if (lines[i + 1] === '--') {
+        
+        // 次の行が区切り文字か予想印かをチェック（-- 以外にも ◎ ○ ▲ △ ☆ ✓ 消 に対応）
+        const separatorPattern = /^(--|◎|◯|▲|△|☆|✓|消|)$/;
+        if (i + 1 < lines.length && separatorPattern.test(lines[i + 1])) {
           const name = lines[i + 2];
           const infoLine = lines[i + 3];
-          const parts = infoLine.split(/\t+/);
+          
+          if (name && infoLine) {
+            const parts = infoLine.split(/\t+/);
 
-          if (parts.length >= 6) {
-            const sexAge = parts[0];
-            const weight = parseFloat(parts[1]);
-            const jockey = parts[2];
-            const odds = parseFloat(parts[4]);
-            const popularity = parseInt(parts[5]);
+            if (parts.length >= 6) {
+              const sexAge = parts[0];
+              const weight = parseFloat(parts[1]);
+              const jockey = parts[2];
+              
+              // 馬体重が含まれているかチェック（"454(0)"のような形式）
+              let oddsIndex = 4;
+              let popularityIndex = 5;
+              
+              // parts[4]が馬体重の形式（数字＋括弧）かチェック
+              if (parts.length >= 7 && /^\d+\(\S*\)$/.test(parts[4])) {
+                // 馬体重が含まれている場合、オッズと人気のインデックスをずらす
+                oddsIndex = 5;
+                popularityIndex = 6;
+              }
+              
+              const odds = parseFloat(parts[oddsIndex]);
+              const popularity = parseInt(parts[popularityIndex]);
 
-            const sex = sexAge.slice(0, 1);
-            const age = parseInt(sexAge.slice(1));
+              const sex = sexAge.slice(0, 1);
+              const age = parseInt(sexAge.slice(1));
 
-            horses.push({
-              frameNumber,
-              horseNumber,
-              name,
-              sex,
-              age,
-              weight,
-              jockey,
-              odds,
-              popularity
-            });
+              horses.push({
+                frameNumber,
+                horseNumber,
+                name,
+                sex,
+                age,
+                weight,
+                jockey,
+                odds,
+                popularity
+              });
 
-            i += 3;
+              i += 3;
+            }
           }
         }
       }
@@ -473,6 +503,9 @@ const RaceForm = () => {
                       value={h.popularity}
                       onChange={e => handleHorseChange(i, 'popularity', e.target.value)}
                       style={{ width: '40px' }}
+                      min="1"
+                      max={horses.length}
+                      title={`1～${horses.length}番人気の範囲で入力してください`}
                     />
                   </td>
                 </tr>
