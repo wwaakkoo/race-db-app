@@ -2,6 +2,7 @@ import React from 'react';
 import RaceForm from './components/RaceForm';
 import RaceList from './components/RaceList';
 import Statistics from './components/Statistics';
+import BetCalculator from './components/BetCalculator';
 
 function App() {
   return (
@@ -12,6 +13,8 @@ function App() {
       <RaceList />
       <hr />
       <Statistics />
+      <hr />
+      <BetCalculator />
     </div>
   );
 }
