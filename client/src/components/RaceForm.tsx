@@ -127,8 +127,20 @@ const RaceForm = () => {
             const sexAge = parts[0];
             const weight = parseFloat(parts[1]);
             const jockey = parts[2];
-            const odds = parseFloat(parts[4]);
-            const popularity = parseInt(parts[5]);
+            
+            // 馬体重が含まれているかチェック（"454(0)"のような形式）
+            let oddsIndex = 4;
+            let popularityIndex = 5;
+            
+            // parts[4]が馬体重の形式（数字＋括弧）かチェック
+            if (parts.length >= 7 && /^\d+\(\S*\)$/.test(parts[4])) {
+              // 馬体重が含まれている場合、オッズと人気のインデックスをずらす
+              oddsIndex = 5;
+              popularityIndex = 6;
+            }
+            
+            const odds = parseFloat(parts[oddsIndex]);
+            const popularity = parseInt(parts[popularityIndex]);
 
             const sex = sexAge.slice(0, 1);
             const age = parseInt(sexAge.slice(1));

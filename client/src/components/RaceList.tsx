@@ -6,6 +6,12 @@ import ResultForm from './ResultForm';
 const RaceList = () => {
   const [races, setRaces] = useState<Race[]>([]);
   const [editingRaceId, setEditingRaceId] = useState<string | null>(null);
+  const [showAll, setShowAll] = useState(false);
+  const [filters, setFilters] = useState({
+    date: '',
+    course: '',
+    level: ''
+  });
 
   const fetchRaces = () => {
     axios.get('/api/race')
@@ -36,11 +42,117 @@ const RaceList = () => {
     return horse ? `${horse.horseNumber}番 ${horseName}` : horseName;
   };
 
+  // フィルタリング適用
+  const filteredRaces = races.filter(race => {
+    const dateMatch = !filters.date || race.date === filters.date;
+    const courseMatch = !filters.course || race.course === filters.course;
+    const levelMatch = !filters.level || race.level === filters.level;
+    return dateMatch && courseMatch && levelMatch;
+  });
+
+  // 表示するレースを決定（最新12件 or 全件）
+  const displayRaces = showAll ? filteredRaces : filteredRaces.slice(-12);
+  const hasMoreRaces = filteredRaces.length > 12;
+
+  // フィルタ用の選択肢を取得
+  const uniqueDates = Array.from(new Set(races.map(race => race.date))).sort().reverse();
+  const uniqueCourses = Array.from(new Set(races.map(race => race.course)));
+  const uniqueLevels = Array.from(new Set(races.map(race => race.level)));
+
   return (
     <div>
       <h2>保存済みレース一覧</h2>
+      
+      {/* フィルタリングセクション */}
+      <div style={{ 
+        marginBottom: '20px', 
+        padding: '15px', 
+        backgroundColor: '#f8f9fa', 
+        borderRadius: '5px',
+        border: '1px solid #ddd'
+      }}>
+        <h4 style={{ marginTop: '0', marginBottom: '10px' }}>絞り込み</h4>
+        <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+          <div>
+            <label style={{ marginRight: '5px' }}>開催日:</label>
+            <select 
+              value={filters.date} 
+              onChange={(e) => setFilters({...filters, date: e.target.value})}
+              style={{ padding: '4px 8px' }}
+            >
+              <option value="">全て</option>
+              {uniqueDates.map(date => (
+                <option key={date} value={date}>{date}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label style={{ marginRight: '5px' }}>コース:</label>
+            <select 
+              value={filters.course} 
+              onChange={(e) => setFilters({...filters, course: e.target.value})}
+              style={{ padding: '4px 8px' }}
+            >
+              <option value="">全て</option>
+              {uniqueCourses.map(course => (
+                <option key={course} value={course}>{course}</option>
+              ))}
+            </select>
+          </div>
+          
+          <div>
+            <label style={{ marginRight: '5px' }}>レベル:</label>
+            <select 
+              value={filters.level} 
+              onChange={(e) => setFilters({...filters, level: e.target.value})}
+              style={{ padding: '4px 8px' }}
+            >
+              <option value="">全て</option>
+              {uniqueLevels.map(level => (
+                <option key={level} value={level}>{level}</option>
+              ))}
+            </select>
+          </div>
+          
+          <button 
+            onClick={() => setFilters({date: '', course: '', level: ''})}
+            style={{ 
+              padding: '4px 8px', 
+              backgroundColor: '#6c757d', 
+              color: 'white', 
+              border: 'none',
+              borderRadius: '3px',
+              cursor: 'pointer'
+            }}
+          >
+            リセット
+          </button>
+        </div>
+        
+        <div style={{ marginTop: '8px', fontSize: '14px', color: '#666' }}>
+          {filteredRaces.length}件のレースが見つかりました
+        </div>
+      </div>
+
+      {hasMoreRaces && (
+        <div style={{ marginBottom: '15px' }}>
+          <button 
+            onClick={() => setShowAll(!showAll)}
+            style={{ 
+              padding: '6px 12px', 
+              backgroundColor: '#f8f9fa', 
+              border: '1px solid #ccc',
+              borderRadius: '4px',
+              cursor: 'pointer'
+            }}
+          >
+            {showAll ? `最新12件のみ表示 (${filteredRaces.length}件中)` : `全件表示 (${filteredRaces.length}件)`}
+          </button>
+        </div>
+      )}
       <div>
-        {races.map((race) => (
+        {displayRaces.map((race) => (
           <div key={race.id} style={{ margin: '10px 0', padding: '10px', border: '1px solid #ccc' }}>
             <div>
               <strong>{race.course} {race.level}</strong> / {race.surface} {race.distance}m [{race.condition}]<br />
