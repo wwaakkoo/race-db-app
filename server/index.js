@@ -136,6 +136,48 @@ app.get('/api/statistics', (_, res) => {
   });
 });
 
+// ✅ PUT: レース結果を更新
+app.put('/api/race/:id/result', (req, res) => {
+  const raceId = req.params.id;
+  const result = req.body;
+  
+  console.log('📝 レース結果更新:', raceId, result);
+
+  fs.readFile(DATA_PATH, 'utf8', (err, data) => {
+    if (err) {
+      console.error('❌ ファイル読み込みエラー:', err);
+      return res.status(500).json({ error: 'ファイルの読み込みに失敗しました' });
+    }
+
+    try {
+      const races = JSON.parse(data);
+      const raceIndex = races.findIndex(race => race.id === raceId);
+      
+      if (raceIndex === -1) {
+        return res.status(404).json({ error: 'レースが見つかりません' });
+      }
+
+      // 結果を更新
+      races[raceIndex].result = result;
+
+      // ファイルに保存
+      fs.writeFile(DATA_PATH, JSON.stringify(races, null, 2), (writeErr) => {
+        if (writeErr) {
+          console.error('❌ 保存失敗:', writeErr);
+          return res.status(500).json({ error: '保存に失敗しました' });
+        }
+        
+        console.log('✅ 結果更新成功');
+        res.json({ message: 'レース結果が更新されました', race: races[raceIndex] });
+      });
+
+    } catch (parseErr) {
+      console.error('❌ JSONパースエラー:', parseErr);
+      res.status(500).json({ error: 'JSONパースに失敗しました' });
+    }
+  });
+});
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
