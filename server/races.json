@@ -1,134 +1,270 @@
 [
   {
-    "date": "2025-07-19",
-    "course": "福島",
-    "distance": 1800,
+    "id": "sample1",
+    "date": "2024-01-15",
+    "course": "東京",
+    "distance": 1600,
     "surface": "芝",
     "condition": "良",
-    "level": "オープン",
+    "level": "1000万下",
     "horses": [
       {
         "frameNumber": 1,
         "horseNumber": 1,
-        "name": "ワイドアラジン",
+        "name": "サンプル馬A",
         "sex": "牡",
-        "age": 5,
-        "weight": 57,
-        "jockey": "小沢",
-        "odds": 482,
-        "popularity": 6
+        "age": 4,
+        "weight": 480,
+        "jockey": "佐藤騎手",
+        "odds": 3.2,
+        "popularity": 1
       },
       {
         "frameNumber": 2,
         "horseNumber": 2,
-        "name": "アンリーロード",
+        "name": "サンプル馬B",
         "sex": "牝",
-        "age": 5,
-        "weight": 53,
-        "jockey": "荻野極",
-        "odds": 482,
-        "popularity": 10
+        "age": 3,
+        "weight": 460,
+        "jockey": "田中騎手",
+        "odds": 5.1,
+        "popularity": 2
       },
       {
         "frameNumber": 3,
         "horseNumber": 3,
-        "name": "ココクレーター",
-        "sex": "牝",
+        "name": "サンプル馬C",
+        "sex": "牡",
         "age": 5,
-        "weight": 54,
-        "jockey": "杉原",
-        "odds": 434,
-        "popularity": 12
+        "weight": 490,
+        "jockey": "鈴木騎手",
+        "odds": 8.5,
+        "popularity": 3
       },
       {
         "frameNumber": 4,
         "horseNumber": 4,
-        "name": "イケイケドンドン",
+        "name": "サンプル馬D",
         "sex": "牡",
-        "age": 5,
-        "weight": 55,
-        "jockey": "大野",
-        "odds": 470,
-        "popularity": 11
+        "age": 4,
+        "weight": 475,
+        "jockey": "高橋騎手",
+        "odds": 12.3,
+        "popularity": 4
       },
       {
         "frameNumber": 5,
         "horseNumber": 5,
-        "name": "グラニット",
+        "name": "サンプル馬E",
+        "sex": "牝",
+        "age": 3,
+        "weight": 455,
+        "jockey": "渡辺騎手",
+        "odds": 15.7,
+        "popularity": 5
+      }
+    ],
+    "result": {
+      "1着": "サンプル馬A",
+      "2着": "サンプル馬C",
+      "3着": "サンプル馬B"
+    }
+  },
+  {
+    "id": "sample2",
+    "date": "2024-01-22",
+    "course": "阪神",
+    "distance": 1800,
+    "surface": "芝",
+    "condition": "稍重",
+    "level": "1000万下",
+    "horses": [
+      {
+        "frameNumber": 1,
+        "horseNumber": 1,
+        "name": "テスト馬X",
+        "sex": "牡",
+        "age": 4,
+        "weight": 485,
+        "jockey": "山田騎手",
+        "odds": 2.8,
+        "popularity": 1
+      },
+      {
+        "frameNumber": 2,
+        "horseNumber": 2,
+        "name": "テスト馬Y",
+        "sex": "牝",
+        "age": 3,
+        "weight": 465,
+        "jockey": "中村騎手",
+        "odds": 4.9,
+        "popularity": 2
+      },
+      {
+        "frameNumber": 3,
+        "horseNumber": 3,
+        "name": "テスト馬Z",
         "sex": "牡",
         "age": 5,
+        "weight": 495,
+        "jockey": "小林騎手",
+        "odds": 7.2,
+        "popularity": 3
+      },
+      {
+        "frameNumber": 4,
+        "horseNumber": 4,
+        "name": "テスト馬W",
+        "sex": "牡",
+        "age": 4,
+        "weight": 470,
+        "jockey": "松本騎手",
+        "odds": 9.8,
+        "popularity": 4
+      }
+    ],
+    "result": {
+      "1着": "テスト馬Y",
+      "2着": "テスト馬X",
+      "3着": "テスト馬Z"
+    }
+  },
+  {
+    "date": "2025-07-19",
+    "course": "函館",
+    "distance": 1800,
+    "surface": "芝",
+    "condition": "良",
+    "level": "未勝利",
+    "horses": [
+      {
+        "frameNumber": 1,
+        "horseNumber": 1,
+        "name": "ロイヤルタイム",
+        "sex": "牡",
+        "age": 2,
         "weight": 55,
-        "jockey": "丸田",
-        "odds": 468,
-        "popularity": 12
+        "jockey": "黛",
+        "odds": 4.4,
+        "popularity": 2
+      },
+      {
+        "frameNumber": 2,
+        "horseNumber": 2,
+        "name": "ジャストビート",
+        "sex": "牝",
+        "age": 2,
+        "weight": 55,
+        "jockey": "丹内",
+        "odds": 4.2,
+        "popularity": 3
+      },
+      {
+        "frameNumber": 3,
+        "horseNumber": 3,
+        "name": "チェンドル",
+        "sex": "牝",
+        "age": 2,
+        "weight": 51,
+        "jockey": "小林美",
+        "odds": 4.4,
+        "popularity": 4
+      },
+      {
+        "frameNumber": 4,
+        "horseNumber": 4,
+        "name": "ブルームオブピース",
+        "sex": "牝",
+        "age": 2,
+        "weight": 52,
+        "jockey": "和田陽",
+        "odds": 4.3,
+        "popularity": 5
+      },
+      {
+        "frameNumber": 5,
+        "horseNumber": 5,
+        "name": "トーセンシーギリヤ",
+        "sex": "牡",
+        "age": 2,
+        "weight": 55,
+        "jockey": "原田和",
+        "odds": 4.7,
+        "popularity": 6
       },
       {
         "frameNumber": 6,
         "horseNumber": 6,
-        "name": "ロジマンボ",
-        "sex": "牡",
-        "age": 6,
-        "weight": 53,
-        "jockey": "内田博",
-        "odds": 492,
-        "popularity": 66
-      },
-      {
-        "frameNumber": 6,
-        "horseNumber": 7,
-        "name": "ユキノロイヤル",
-        "sex": "牡",
-        "age": 4,
-        "weight": 56,
-        "jockey": "石橋脩",
-        "odds": 460,
+        "name": "サマーカムカム",
+        "sex": "牝",
+        "age": 2,
+        "weight": 52,
+        "jockey": "森田",
+        "odds": 4.1,
         "popularity": 7
       },
       {
         "frameNumber": 7,
-        "horseNumber": 8,
-        "name": "マイネルティグレ",
-        "sex": "牡",
-        "age": 4,
-        "weight": 56,
-        "jockey": "津村",
-        "odds": 478,
-        "popularity": 5
-      },
-      {
-        "frameNumber": 7,
-        "horseNumber": 9,
-        "name": "ダニーデン",
-        "sex": "牡",
-        "age": 5,
+        "horseNumber": 7,
+        "name": "セレーノ",
+        "sex": "牝",
+        "age": 2,
         "weight": 55,
-        "jockey": "石川",
-        "odds": 502,
-        "popularity": 18
+        "jockey": "鮫島駿",
+        "odds": 4.4,
+        "popularity": 8
       },
       {
         "frameNumber": 8,
+        "horseNumber": 8,
+        "name": "ラシッド",
+        "sex": "牡",
+        "age": 2,
+        "weight": 55,
+        "jockey": "佐々木",
+        "odds": 4.8,
+        "popularity": 9
+      },
+      {
+        "frameNumber": 9,
+        "horseNumber": 9,
+        "name": "スマートプリエール",
+        "sex": "牝",
+        "age": 2,
+        "weight": 55,
+        "jockey": "武豊",
+        "odds": 4.7,
+        "popularity": 1
+      },
+      {
+        "frameNumber": 10,
         "horseNumber": 10,
-        "name": "ディープリッチ",
+        "name": "ティブロン",
         "sex": "牡",
-        "age": 7,
-        "weight": 53,
-        "jockey": "武藤",
-        "odds": 526,
-        "popularity": 77
+        "age": 2,
+        "weight": 55,
+        "jockey": "北村友",
+        "odds": 5.3,
+        "popularity": 10
       },
       {
-        "frameNumber": 8,
+        "frameNumber": 11,
         "horseNumber": 11,
-        "name": "ボーモンド",
+        "name": "シャインヴィーラ",
         "sex": "牡",
-        "age": 4,
-        "weight": 56,
-        "jockey": "戸崎圭",
-        "odds": 484,
-        "popularity": 2
+        "age": 2,
+        "weight": 54,
+        "jockey": "松本",
+        "odds": 4.7,
+        "popularity": 11
       }
     ],
-    "id": "17529061715788pfm74ieg"
+    "id": "1752906880187ki11yibrf",
+    "result": {
+      "1着": "スマートプリエール",
+      "2着": "ロイヤルタイム",
+      "3着": "チェンドル"
+    }
   }
 ]

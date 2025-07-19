@@ -473,6 +473,9 @@ const RaceForm = () => {
                       value={h.popularity}
                       onChange={e => handleHorseChange(i, 'popularity', e.target.value)}
                       style={{ width: '40px' }}
+                      min="1"
+                      max={horses.length}
+                      title={`1～${horses.length}番人気の範囲で入力してください`}
                     />
                   </td>
                 </tr>

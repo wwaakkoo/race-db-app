@@ -75,8 +75,17 @@ function calculatePopularityStats(races) {
   races.forEach(race => {
     if (!race.result) return;
     
+    const horseCount = race.horses.length;
+    
     race.horses.forEach(horse => {
       const popularity = horse.popularity;
+      
+      // データバリデーション: 人気は1～出走頭数の範囲内であること
+      if (!popularity || popularity < 1 || popularity > horseCount) {
+        console.warn(`無効な人気データ: ${horse.name} - 人気: ${popularity} (出走頭数: ${horseCount})`);
+        return; // 無効なデータをスキップ
+      }
+      
       if (!stats[popularity]) {
         stats[popularity] = {
           total: 0,

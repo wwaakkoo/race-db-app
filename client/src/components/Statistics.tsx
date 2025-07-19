@@ -21,7 +21,12 @@ const Statistics: React.FC = () => {
     fetchStats();
   }, []);
 
-  const sortedPopularities = Object.keys(stats).sort((a, b) => parseInt(a) - parseInt(b));
+  // 人気データのフィルタリングと並び替え
+  const sortedPopularities = Object.keys(stats)
+    .map(p => parseInt(p))
+    .filter(p => p >= 1 && p <= 18) // 1～18番人気に制限（通常の出走頭数範囲）
+    .sort((a, b) => a - b)
+    .map(p => p.toString());
 
   const getTotalRaces = () => {
     return Object.values(stats).reduce((sum, stat) => sum + stat.wins, 0);
@@ -129,6 +134,8 @@ const Statistics: React.FC = () => {
               緑背景は勝率20%超の人気、期待値は単勝的中時に必要な最低オッズの目安です。
               <br />
               例: 1番人気の勝率が30%なら、3.3倍以上のオッズがあれば期待値プラス
+              <br />
+              <small>※ 人気データが1～18番人気の範囲外の場合は統計から除外されます</small>
             </p>
           </div>
         </>
