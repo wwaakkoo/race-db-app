@@ -401,7 +401,7 @@ const RaceForm = () => {
       const conditionWeights = await localStorageApi.calculateConditionBasedWeights(raceConditions);
       setCustomWeights(conditionWeights);
       
-      const result = `🎯 条件別分析完了！\\n${raceInfo.surface} ${raceInfo.distance}m (${raceInfo.course}) に最適化\\n人気: ${(conditionWeights.popularity * 100).toFixed(1)}% | 騎手: ${(conditionWeights.jockey * 100).toFixed(1)}% | 距離: ${(conditionWeights.distance * 100).toFixed(1)}% | ベース: ${(conditionWeights.base * 100).toFixed(1)}%`;
+      const result = `🎯 条件別分析完了！\\n${raceInfo.surface} ${raceInfo.distance}m (${raceInfo.course}) に最適化\\n人気: ${(conditionWeights.popularity * 100).toFixed(1)}% | 騎手: ${(conditionWeights.jockey * 100).toFixed(1)}% | 距離: ${(conditionWeights.distance * 100).toFixed(1)}% | ベース: ${(conditionWeights.base * 100).toFixed(1)}%\\n\\n💡 ブラウザの開発者ツール(F12)のコンソールで詳細な分析情報をご確認いただけます`;
       setOptimizationResult(result);
       
       console.log('🎯 条件別最適化完了:', conditionWeights);

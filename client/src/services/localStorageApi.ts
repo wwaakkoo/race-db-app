@@ -225,6 +225,9 @@ class LocalStorageApi {
     try {
       const races = await this.getRaces();
       
+      // 期間情報を分析
+      const periodInfo = this.analyzePeriodInfo(races);
+      
       // 類似条件のレースを抽出
       const similarRaces = races.filter(race => {
         let score = 0;
@@ -244,8 +247,13 @@ class LocalStorageApi {
         return score >= 2 && race.result; // 結果があるレースのみ
       });
 
+      // 季節情報を分析
+      const seasonInfo = this.analyzeSeasonalData(similarRaces, raceConditions);
+
       console.log(`🎯 条件分析: ${raceConditions.surface} ${raceConditions.distance}m (${raceConditions.course})`);
-      console.log(`📈 類似レース: ${similarRaces.length}件`);
+      console.log(`📅 分析期間: ${periodInfo.dateRange} (全${races.length}件)`);
+      console.log(`📈 類似レース: ${similarRaces.length}件 ${seasonInfo.seasonNote}`);
+      console.log(seasonInfo.detailLog);
 
       if (similarRaces.length < 3) {
         // データ不足時は条件別プリセットを使用
@@ -349,6 +357,127 @@ class LocalStorageApi {
     }
 
     return adjustedWeights;
+  }
+
+  // 期間情報の分析
+  private analyzePeriodInfo(races: Race[]) {
+    if (races.length === 0) {
+      return { dateRange: '期間不明', totalRaces: 0 };
+    }
+
+    const dates = races.map(race => race.date).sort();
+    const earliestDate = dates[0];
+    const latestDate = dates[dates.length - 1];
+    
+    // 期間の長さを計算
+    const startDate = new Date(earliestDate);
+    const endDate = new Date(latestDate);
+    const daysDiff = Math.floor((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+    const monthsDiff = Math.floor(daysDiff / 30);
+    
+    let periodDescription = '';
+    if (monthsDiff < 1) {
+      periodDescription = `約${daysDiff}日間`;
+    } else if (monthsDiff < 12) {
+      periodDescription = `約${monthsDiff}ヶ月間`;
+    } else {
+      const yearsDiff = Math.floor(monthsDiff / 12);
+      const remainingMonths = monthsDiff % 12;
+      periodDescription = remainingMonths > 0 
+        ? `約${yearsDiff}年${remainingMonths}ヶ月間`
+        : `約${yearsDiff}年間`;
+    }
+
+    return {
+      dateRange: `${earliestDate} - ${latestDate} (${periodDescription})`,
+      totalRaces: races.length,
+      earliestDate,
+      latestDate,
+      periodDescription
+    };
+  }
+
+  // 季節データの分析
+  private analyzeSeasonalData(similarRaces: Race[], raceConditions: { surface: string; distance: number; course: string }) {
+    const currentMonth = new Date().getMonth() + 1; // 1-12
+    const currentSeason = this.getSeasonFromMonth(currentMonth);
+    
+    // 季節別に分類
+    const seasonalBreakdown = {
+      spring: 0,  // 3-5月
+      summer: 0,  // 6-8月
+      autumn: 0,  // 9-11月  
+      winter: 0   // 12-2月
+    };
+
+    similarRaces.forEach(race => {
+      const raceMonth = new Date(race.date).getMonth() + 1;
+      const season = this.getSeasonFromMonth(raceMonth);
+      seasonalBreakdown[season]++;
+    });
+
+    // 現在の季節のデータ数
+    const currentSeasonData = seasonalBreakdown[currentSeason];
+    const currentSeasonName = this.getSeasonName(currentSeason);
+    
+    // 季節の偏りを分析
+    const maxSeasonData = Math.max(...Object.values(seasonalBreakdown));
+    const hasSeasonalBias = maxSeasonData > similarRaces.length * 0.6;
+
+    let seasonNote = '';
+    let detailLog = '';
+
+    if (similarRaces.length === 0) {
+      seasonNote = '(データなし)';
+    } else {
+      seasonNote = `(現在${currentSeasonName}・同季節${currentSeasonData}件)`;
+      
+      // 詳細ログ
+      detailLog = `📊 季節別内訳: 春${seasonalBreakdown.spring}件 / 夏${seasonalBreakdown.summer}件 / 秋${seasonalBreakdown.autumn}件 / 冬${seasonalBreakdown.winter}件`;
+      
+      if (hasSeasonalBias) {
+        const dominantSeason = Object.entries(seasonalBreakdown)
+          .reduce((max, [season, count]) => count > max.count ? { season, count } : max, { season: '', count: 0 });
+        detailLog += `\n🎯 ${this.getSeasonName(dominantSeason.season as any)}データが多め (${dominantSeason.count}/${similarRaces.length}件)`;
+      }
+
+      if (currentSeasonData < 3 && similarRaces.length >= 5) {
+        detailLog += `\n⚠️ 現在の季節(${currentSeasonName})のデータが少なめです`;
+      }
+
+      // 夏競馬の特別注記
+      if (currentSeason === 'summer' && seasonalBreakdown.summer > 0) {
+        detailLog += `\n🌞 夏競馬期間: 騎手技術がより重要になる傾向`;
+      }
+    }
+
+    return {
+      seasonNote,
+      detailLog,
+      currentSeason,
+      currentSeasonData,
+      seasonalBreakdown,
+      hasSeasonalBias
+    };
+  }
+
+  // 月から季節を判定
+  private getSeasonFromMonth(month: number): 'spring' | 'summer' | 'autumn' | 'winter' {
+    if (month >= 3 && month <= 5) return 'spring';
+    if (month >= 6 && month <= 8) return 'summer';
+    if (month >= 9 && month <= 11) return 'autumn';
+    return 'winter'; // 12, 1, 2月
+  }
+
+  // 季節名を取得
+  private getSeasonName(season: 'spring' | 'summer' | 'autumn' | 'winter'): string {
+    const seasonNames = {
+      spring: '春',
+      summer: '夏', 
+      autumn: '秋',
+      winter: '冬'
+    };
+    return seasonNames[season];
   }
 
   // データエクスポート
