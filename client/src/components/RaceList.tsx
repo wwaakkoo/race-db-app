@@ -34,6 +34,19 @@ const RaceList = () => {
     setEditingRaceId(null);
   };
 
+  const handleDeleteRace = async (raceId: string, raceName: string) => {
+    if (window.confirm(`「${raceName}」を削除しますか？この操作は元に戻せません。`)) {
+      try {
+        await localStorageApi.deleteRace(raceId);
+        await fetchRaces(); // リスト更新
+        alert('レースを削除しました');
+      } catch (error) {
+        console.error('削除エラー:', error);
+        alert('削除に失敗しました');
+      }
+    }
+  };
+
   const getHorseDisplayForResult = (race: Race, horseName?: string) => {
     if (!horseName) return '';
     const horse = race.horses.find(h => h.name === horseName);
@@ -169,7 +182,7 @@ const RaceList = () => {
               </div>
             )}
             
-            <div style={{ marginTop: '10px' }}>
+            <div style={{ marginTop: '10px', display: 'flex', gap: '10px' }}>
               {editingRaceId === race.id ? (
                 <ResultForm 
                   race={race} 
@@ -177,12 +190,20 @@ const RaceList = () => {
                   onCancel={handleCancelEdit}
                 />
               ) : (
-                <button 
-                  onClick={() => setEditingRaceId(race.id)}
-                  style={{ padding: '5px 10px' }}
-                >
-                  {race.result ? '結果を編集' : '結果を登録'}
-                </button>
+                <>
+                  <button 
+                    onClick={() => setEditingRaceId(race.id)}
+                    style={{ padding: '5px 10px', backgroundColor: '#007bff', color: 'white', border: 'none', borderRadius: '4px' }}
+                  >
+                    {race.result ? '結果を編集' : '結果を登録'}
+                  </button>
+                  <button 
+                    onClick={() => handleDeleteRace(race.id, `${race.course} ${race.level}`)}
+                    style={{ padding: '5px 10px', backgroundColor: '#dc3545', color: 'white', border: 'none', borderRadius: '4px' }}
+                  >
+                    削除
+                  </button>
+                </>
               )}
             </div>
           </div>

@@ -136,6 +136,31 @@ class LocalStorageApi {
     }
   }
 
+  // レース削除
+  async deleteRace(raceId: string): Promise<void> {
+    try {
+      const races = await this.getRaces();
+      const filteredRaces = races.filter(race => race.id !== raceId);
+      if (filteredRaces.length === races.length) {
+        throw new Error('削除対象のレースが見つかりません');
+      }
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(filteredRaces));
+    } catch (error) {
+      console.error('レース削除エラー:', error);
+      throw new Error('レースの削除に失敗しました');
+    }
+  }
+
+  // 全データクリア
+  async clearAllData(): Promise<void> {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+    } catch (error) {
+      console.error('データクリアエラー:', error);
+      throw new Error('データのクリアに失敗しました');
+    }
+  }
+
   // 統計情報計算
   async getStatistics(filters: any = {}): Promise<any> {
     try {

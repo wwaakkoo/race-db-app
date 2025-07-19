@@ -6,6 +6,7 @@ const DataManager: React.FC = () => {
   const [exporting, setExporting] = useState(false);
   const [importResult, setImportResult] = useState<string>('');
   const [importFile, setImportFile] = useState<File | null>(null);
+  const [clearing, setClearing] = useState(false);
 
   // JSONエクスポート
   const handleExportJSON = async () => {
@@ -144,6 +145,24 @@ const DataManager: React.FC = () => {
     setImporting(false);
   };
 
+  // 全データクリア
+  const handleClearAllData = async () => {
+    if (window.confirm('⚠️ 全てのレースデータを削除しますか？\n\nこの操作は元に戻せません。\n事前にエクスポートでバックアップを取ることをお勧めします。')) {
+      if (window.confirm('本当に全データを削除しますか？最終確認です。')) {
+        setClearing(true);
+        try {
+          await localStorageApi.clearAllData();
+          setImportResult('全データを削除しました');
+          alert('全データを削除しました');
+        } catch (error) {
+          console.error('データクリアエラー:', error);
+          alert('データの削除に失敗しました');
+        }
+        setClearing(false);
+      }
+    }
+  };
+
   return (
     <div style={{ margin: '20px 0' }}>
       <h2>データ管理</h2>
@@ -258,6 +277,32 @@ const DataManager: React.FC = () => {
             <li>同じデータ構造を持つ外部JSONファイル</li>
           </ul>
         </div>
+      </div>
+
+      {/* データクリア機能 */}
+      <div style={{ marginBottom: '30px', padding: '20px', backgroundColor: '#fff3cd', borderRadius: '8px', border: '1px solid #ffeaa7' }}>
+        <h3 style={{ marginTop: 0, color: '#856404' }}>⚠️ データクリア</h3>
+        <p style={{ color: '#856404', marginBottom: '15px' }}>
+          全てのレースデータを削除します。この操作は元に戻せません。<br />
+          <strong>削除前に必ずエクスポートでバックアップを取ってください。</strong>
+        </p>
+        
+        <button
+          onClick={handleClearAllData}
+          disabled={clearing}
+          style={{
+            padding: '10px 20px',
+            backgroundColor: '#dc3545',
+            color: 'white',
+            border: 'none',
+            borderRadius: '5px',
+            cursor: clearing ? 'not-allowed' : 'pointer',
+            opacity: clearing ? 0.6 : 1,
+            fontWeight: 'bold'
+          }}
+        >
+          {clearing ? '削除中...' : '🗑️ 全データを削除'}
+        </button>
       </div>
     </div>
   );
