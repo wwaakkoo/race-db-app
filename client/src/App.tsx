@@ -4,6 +4,8 @@ import RaceList from './components/RaceList';
 import Statistics from './components/Statistics';
 import AdvancedStatistics from './components/AdvancedStatistics';
 import RaceComposition from './components/RaceComposition';
+import DataManager from './components/DataManager';
+import StrategyAnalysis from './components/StrategyAnalysis';
 
 function App() {
   return (
@@ -13,11 +15,15 @@ function App() {
       <hr />
       <RaceList />
       <hr />
+      <DataManager />
+      <hr />
       <RaceComposition />
       <hr />
       <Statistics />
       <hr />
       <AdvancedStatistics />
+      <hr />
+      <StrategyAnalysis />
     </div>
   );
 }
