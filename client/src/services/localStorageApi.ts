@@ -216,6 +216,141 @@ class LocalStorageApi {
     }
   }
 
+  // 条件別重み計算
+  async calculateConditionBasedWeights(raceConditions: {
+    surface: string;
+    distance: number;
+    course: string;
+  }): Promise<{ popularity: number; jockey: number; distance: number; base: number }> {
+    try {
+      const races = await this.getRaces();
+      
+      // 類似条件のレースを抽出
+      const similarRaces = races.filter(race => {
+        let score = 0;
+        
+        // 馬場が同じ（重要度：高）
+        if (race.surface === raceConditions.surface) score += 3;
+        
+        // 距離が近い（±200m以内で重要度：中）
+        const distanceDiff = Math.abs(race.distance - raceConditions.distance);
+        if (distanceDiff <= 200) score += 2;
+        else if (distanceDiff <= 400) score += 1;
+        
+        // コースが同じ（重要度：低）
+        if (race.course === raceConditions.course) score += 1;
+        
+        // スコア2以上を類似条件とする
+        return score >= 2 && race.result; // 結果があるレースのみ
+      });
+
+      console.log(`🎯 条件分析: ${raceConditions.surface} ${raceConditions.distance}m (${raceConditions.course})`);
+      console.log(`📈 類似レース: ${similarRaces.length}件`);
+
+      if (similarRaces.length < 3) {
+        // データ不足時は条件別プリセットを使用
+        return this.getConditionPresetWeights(raceConditions);
+      }
+
+      // 類似レースから精度計算
+      const popularityAccuracy = this.calculatePopularityAccuracy(similarRaces);
+      const jockeyAccuracy = this.calculateJockeyAccuracy(similarRaces);
+      const distanceAccuracy = this.calculateDistanceAccuracy(similarRaces);
+      const baseAccuracy = 0.05;
+
+      // 条件別補正を適用
+      const adjustedWeights = this.applyConditionAdjustments({
+        popularity: popularityAccuracy,
+        jockey: jockeyAccuracy,
+        distance: distanceAccuracy,
+        base: baseAccuracy
+      }, raceConditions);
+
+      // 正規化
+      const total = Object.values(adjustedWeights).reduce((sum, val) => sum + val, 0);
+      
+      return {
+        popularity: adjustedWeights.popularity / total,
+        jockey: adjustedWeights.jockey / total,
+        distance: adjustedWeights.distance / total,
+        base: adjustedWeights.base / total
+      };
+    } catch (error) {
+      console.error('条件別重み計算エラー:', error);
+      return this.getConditionPresetWeights(raceConditions);
+    }
+  }
+
+  // 条件別プリセット重み
+  private getConditionPresetWeights(conditions: { surface: string; distance: number; course: string }) {
+    // 芝レース
+    if (conditions.surface === '芝') {
+      if (conditions.distance <= 1400) {
+        // 芝短距離: スピード重視（人気・騎手重要）
+        return { popularity: 0.45, jockey: 0.35, distance: 0.15, base: 0.05 };
+      } else if (conditions.distance >= 2400) {
+        // 芝長距離: スタミナ・騎手技術重視
+        return { popularity: 0.3, jockey: 0.45, distance: 0.2, base: 0.05 };
+      } else {
+        // 芝中距離: バランス型
+        return { popularity: 0.4, jockey: 0.35, distance: 0.2, base: 0.05 };
+      }
+    }
+    
+    // ダートレース
+    else if (conditions.surface === 'ダート') {
+      if (conditions.distance <= 1400) {
+        // ダート短距離: パワー・人気重視
+        return { popularity: 0.5, jockey: 0.3, distance: 0.15, base: 0.05 };
+      } else {
+        // ダート中長距離: 騎手・持続力重視
+        return { popularity: 0.35, jockey: 0.4, distance: 0.2, base: 0.05 };
+      }
+    }
+    
+    // デフォルト
+    return { popularity: 0.4, jockey: 0.3, distance: 0.2, base: 0.1 };
+  }
+
+  // 条件別補正の適用
+  private applyConditionAdjustments(
+    baseWeights: { popularity: number; jockey: number; distance: number; base: number },
+    conditions: { surface: string; distance: number; course: string }
+  ) {
+    let adjustedWeights = { ...baseWeights };
+
+    // 芝レースでの補正
+    if (conditions.surface === '芝') {
+      // 長距離では騎手の重要度を上げる
+      if (conditions.distance >= 2400) {
+        adjustedWeights.jockey *= 1.2;
+        adjustedWeights.popularity *= 0.9;
+      }
+      // 短距離では人気の重要度を上げる
+      else if (conditions.distance <= 1400) {
+        adjustedWeights.popularity *= 1.1;
+        adjustedWeights.distance *= 0.9;
+      }
+    }
+
+    // ダートレースでの補正
+    else if (conditions.surface === 'ダート') {
+      // ダートでは人気がより重要
+      adjustedWeights.popularity *= 1.15;
+      adjustedWeights.jockey *= 1.05;
+      adjustedWeights.distance *= 0.95;
+    }
+
+    // 重賞コースでの補正（東京・阪神・京都・中山）
+    const majorCourses = ['東京', '阪神', '京都', '中山'];
+    if (majorCourses.includes(conditions.course)) {
+      // 重賞コースでは騎手の技術がより重要
+      adjustedWeights.jockey *= 1.1;
+    }
+
+    return adjustedWeights;
+  }
+
   // データエクスポート
   async exportData(): Promise<any> {
     try {

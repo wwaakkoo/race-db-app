@@ -73,7 +73,8 @@ const presetWeights = {
   balanced: { name: 'バランス戦略', popularity: 0.4, jockey: 0.3, distance: 0.2, base: 0.1 },
   aggressive: { name: '攻撃的戦略', popularity: 0.2, jockey: 0.4, distance: 0.3, base: 0.1 },
   darkhorse: { name: '穴狙い戦略', popularity: 0.1, jockey: 0.4, distance: 0.4, base: 0.1 },
-  optimal: { name: '🧠 AI最適化', popularity: 0.4, jockey: 0.3, distance: 0.2, base: 0.1 }
+  optimal: { name: '🧠 AI最適化', popularity: 0.4, jockey: 0.3, distance: 0.2, base: 0.1 },
+  condition: { name: '🎯 条件別最適化', popularity: 0.4, jockey: 0.3, distance: 0.2, base: 0.1 }
 };
 
 const RaceForm = () => {
@@ -347,6 +348,9 @@ const RaceForm = () => {
     if (presetKey === 'optimal') {
       // AI最適化を実行
       await optimizeWeights();
+    } else if (presetKey === 'condition') {
+      // 条件別最適化を実行
+      await optimizeConditionWeights();
     } else if (presetKey !== 'custom') {
       const preset = presetWeights[presetKey];
       setCustomWeights({
@@ -373,6 +377,37 @@ const RaceForm = () => {
     } catch (error) {
       console.error('最適化エラー:', error);
       setOptimizationResult('❌ 分析データが不足しています。レース結果を追加してから再実行してください。');
+    }
+    setOptimizing(false);
+  };
+
+  // 条件別最適化実行
+  const optimizeConditionWeights = async () => {
+    setOptimizing(true);
+    try {
+      // レース条件が設定されているかチェック
+      if (!raceInfo.surface || !raceInfo.distance || !raceInfo.course) {
+        setOptimizationResult('❌ レース条件（馬場・距離・コース）をすべて設定してから実行してください。');
+        setOptimizing(false);
+        return;
+      }
+
+      const raceConditions = {
+        surface: raceInfo.surface,
+        distance: parseInt(raceInfo.distance),
+        course: raceInfo.course
+      };
+
+      const conditionWeights = await localStorageApi.calculateConditionBasedWeights(raceConditions);
+      setCustomWeights(conditionWeights);
+      
+      const result = `🎯 条件別分析完了！\\n${raceInfo.surface} ${raceInfo.distance}m (${raceInfo.course}) に最適化\\n人気: ${(conditionWeights.popularity * 100).toFixed(1)}% | 騎手: ${(conditionWeights.jockey * 100).toFixed(1)}% | 距離: ${(conditionWeights.distance * 100).toFixed(1)}% | ベース: ${(conditionWeights.base * 100).toFixed(1)}%`;
+      setOptimizationResult(result);
+      
+      console.log('🎯 条件別最適化完了:', conditionWeights);
+    } catch (error) {
+      console.error('条件別最適化エラー:', error);
+      setOptimizationResult('❌ 類似条件のデータが不足しています。より多くのレース結果を追加してから再実行してください。');
     }
     setOptimizing(false);
   };
@@ -724,6 +759,7 @@ const RaceForm = () => {
                     {selectedPreset === 'aggressive' && '🔥 騎手や距離データを重視した攻撃的予測'}
                     {selectedPreset === 'darkhorse' && '🎲 穴馬を狙う高リスク・高リターン予測'}
                     {selectedPreset === 'optimal' && '🧠 過去データから最適化された重み設定'}
+                    {selectedPreset === 'condition' && '🎯 レース条件に特化した最適化された予測'}
                     {selectedPreset === 'custom' && '🔧 あなた専用のカスタム設定'}
                   </div>
                   
@@ -737,7 +773,10 @@ const RaceForm = () => {
                       fontSize: '14px',
                       color: '#856404'
                     }}>
-                      🧠 AI分析中... 過去のレースデータから最適な重みを計算しています
+                      {selectedPreset === 'condition' 
+                        ? '🎯 条件別分析中... 類似レース条件から最適な重みを計算しています'
+                        : '🧠 AI分析中... 過去のレースデータから最適な重みを計算しています'
+                      }
                     </div>
                   )}
                   
