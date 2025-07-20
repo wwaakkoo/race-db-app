@@ -1,0 +1,25 @@
+title: "Race DB App"
+description: "競馬レースデータの分析・予測アプリケーション"
+baseurl: "/race-db-app"
+url: "https://wwaakkoo.github.io"
+
+markdown: kramdown
+highlighter: rouge
+theme: jekyll-theme-minimal
+
+plugins:
+  - jekyll-feed
+  - jekyll-sitemap
+  - jekyll-seo-tag
+
+include:
+  - bookmarklet.html
+  - static
+
+exclude:
+  - client/
+  - server/
+  - node_modules/
+  - package*.json
+  - .gitignore
+  - README.md
