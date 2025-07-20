@@ -64,7 +64,7 @@ const getDistanceOptions = (surface: string) => {
 };
 const surfaces = ['芝', 'ダート'];
 const conditions = ['良', '稍重', '重', '不良'];
-const levels = ['新馬', '未勝利', '500万下', '1000万下', '1600万下', 'オープン', 'G3', 'G2', 'G1'];
+const levels = ['新馬', '未勝利', '1勝', '2勝', '3勝', 'オープン', 'G3', 'G2', 'G1'];
 
 // プリセット重み戦略
 const presetWeights = {

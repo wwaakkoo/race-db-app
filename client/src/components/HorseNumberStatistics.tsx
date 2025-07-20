@@ -22,7 +22,7 @@ ChartJS.register(
   ArcElement
 );
 
-const Statistics: React.FC = () => {
+const HorseNumberStatistics: React.FC = () => {
   const [stats, setStats] = useState<any>({});
   const [loading, setLoading] = useState(false);
   const [showGraphs, setShowGraphs] = useState(false);
@@ -47,10 +47,10 @@ const Statistics: React.FC = () => {
   const fetchStats = async (filterParams = {}) => {
     setLoading(true);
     try {
-      const statsData = await localStorageApi.getStatistics(filterParams);
+      const statsData = await localStorageApi.getHorseNumberStatistics(filterParams);
       setStats(statsData);
     } catch (error) {
-      console.error('統計取得エラー:', error);
+      console.error('馬番別統計取得エラー:', error);
     }
     setLoading(false);
   };
@@ -96,20 +96,20 @@ const Statistics: React.FC = () => {
     setFilters({ course: [], surface: [], distance: [], level: [] });
   };
 
-  // 人気データのフィルタリングと並び替え
-  const getSortedPopularities = () => {
-    let popularities = Object.keys(stats)
-      .map(p => parseInt(p))
-      .filter(p => p >= 1 && p <= 18) // 1～18番人気に制限（通常の出走頭数範囲）
-      .map(p => p.toString());
+  // 馬番データのフィルタリングと並び替え
+  const getSortedHorseNumbers = () => {
+    let horseNumbers = Object.keys(stats)
+      .map(n => parseInt(n))
+      .filter(n => n >= 1 && n <= 18) // 1～18番の範囲内
+      .map(n => n.toString());
 
     // ソート設定がある場合はそれに従って並び替え
     if (sortConfig) {
-      popularities.sort((a, b) => {
+      horseNumbers.sort((a, b) => {
         let aValue: any, bValue: any;
         
         switch (sortConfig.key) {
-          case 'popularity':
+          case 'horseNumber':
             aValue = parseInt(a);
             bValue = parseInt(b);
             break;
@@ -146,14 +146,14 @@ const Statistics: React.FC = () => {
         return 0;
       });
     } else {
-      // デフォルトは人気順（昇順）
-      popularities.sort((a, b) => parseInt(a) - parseInt(b));
+      // デフォルトは馬番順（昇順）
+      horseNumbers.sort((a, b) => parseInt(a) - parseInt(b));
     }
     
-    return popularities;
+    return horseNumbers;
   };
 
-  const sortedPopularities = getSortedPopularities();
+  const sortedHorseNumbers = getSortedHorseNumbers();
 
   const getTotalRaces = () => {
     return Object.values(stats).reduce((sum, stat: any) => sum + stat.wins, 0);
@@ -197,10 +197,10 @@ const Statistics: React.FC = () => {
 
   // グラフ用データ準備
   const prepareBarChartData = () => {
-    const labels = sortedPopularities.map(p => `${p}番人気`);
-    const winRateData = sortedPopularities.map(p => parseFloat(stats[p]?.winRate || '0'));
-    const placeRateData = sortedPopularities.map(p => parseFloat(stats[p]?.placeRate || '0'));
-    const showRateData = sortedPopularities.map(p => parseFloat(stats[p]?.showRate || '0'));
+    const labels = sortedHorseNumbers.map(n => `${n}番`);
+    const winRateData = sortedHorseNumbers.map(n => parseFloat(stats[n]?.winRate || '0'));
+    const placeRateData = sortedHorseNumbers.map(n => parseFloat(stats[n]?.placeRate || '0'));
+    const showRateData = sortedHorseNumbers.map(n => parseFloat(stats[n]?.showRate || '0'));
 
     return {
       labels,
@@ -231,8 +231,8 @@ const Statistics: React.FC = () => {
   };
 
   const preparePieChartData = () => {
-    const winData = sortedPopularities.slice(0, 5).map(p => stats[p]?.wins || 0);
-    const labels = sortedPopularities.slice(0, 5).map(p => `${p}番人気`);
+    const winData = sortedHorseNumbers.slice(0, 8).map(n => stats[n]?.wins || 0);
+    const labels = sortedHorseNumbers.slice(0, 8).map(n => `${n}番`);
     
     return {
       labels,
@@ -246,6 +246,9 @@ const Statistics: React.FC = () => {
             'rgba(255, 206, 86, 0.6)',
             'rgba(75, 192, 192, 0.6)',
             'rgba(153, 102, 255, 0.6)',
+            'rgba(255, 159, 64, 0.6)',
+            'rgba(199, 199, 199, 0.6)',
+            'rgba(83, 102, 255, 0.6)',
           ],
           borderColor: [
             'rgba(255, 99, 132, 1)',
@@ -253,6 +256,9 @@ const Statistics: React.FC = () => {
             'rgba(255, 206, 86, 1)',
             'rgba(75, 192, 192, 1)',
             'rgba(153, 102, 255, 1)',
+            'rgba(255, 159, 64, 1)',
+            'rgba(199, 199, 199, 1)',
+            'rgba(83, 102, 255, 1)',
           ],
           borderWidth: 1,
         },
@@ -268,7 +274,7 @@ const Statistics: React.FC = () => {
       },
       title: {
         display: true,
-        text: '人気別統計グラフ',
+        text: '馬番別統計グラフ',
       },
     },
     scales: {
@@ -287,7 +293,7 @@ const Statistics: React.FC = () => {
       },
       title: {
         display: true,
-        text: '上位5番人気の勝数分布',
+        text: '馬番別勝数分布',
       },
     },
   };
@@ -396,10 +402,10 @@ const Statistics: React.FC = () => {
 
   return (
     <div style={{ margin: '20px 0' }}>
-      <h2>人気別統計</h2>
+      <h2>馬番別統計</h2>
       {renderFilters()}
       
-      {sortedPopularities.length > 0 ? (
+      {sortedHorseNumbers.length > 0 ? (
         <>
           {/* 全体統計サマリー */}
           <div style={{ marginBottom: '20px', padding: '15px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
@@ -426,17 +432,17 @@ const Statistics: React.FC = () => {
             </div>
           )}
 
-          {/* 人気別詳細統計テーブル */}
+          {/* 馬番別詳細統計テーブル */}
           {!showGraphs && (
           <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
             <thead>
               <tr style={{ backgroundColor: '#e9ecef' }}>
                 <th 
                   style={{ border: '1px solid #ddd', padding: '12px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}
-                  onClick={() => handleSort('popularity')}
+                  onClick={() => handleSort('horseNumber')}
                   title="クリックでソート"
                 >
-                  人気{getSortIcon('popularity')}
+                  馬番{getSortIcon('horseNumber')}
                 </th>
                 <th 
                   style={{ border: '1px solid #ddd', padding: '12px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}
@@ -477,15 +483,15 @@ const Statistics: React.FC = () => {
               </tr>
             </thead>
             <tbody>
-              {sortedPopularities.map(popularity => {
-                const stat = stats[popularity];
+              {sortedHorseNumbers.map(horseNumber => {
+                const stat = stats[horseNumber];
                 const winRateNum = parseFloat(stat.winRate);
                 const expectedValue = winRateNum > 0 ? `約${(100/winRateNum).toFixed(1)}倍` : '---';
                 
                 return (
-                  <tr key={popularity} style={{ backgroundColor: winRateNum > 20 ? '#d4edda' : 'white' }}>
+                  <tr key={horseNumber} style={{ backgroundColor: winRateNum > 15 ? '#d4edda' : 'white' }}>
                     <td style={{ border: '1px solid #ddd', padding: '10px', textAlign: 'center', fontWeight: 'bold' }}>
-                      {popularity}番人気
+                      {horseNumber}番
                     </td>
                     <td style={{ border: '1px solid #ddd', padding: '10px', textAlign: 'center' }}>
                       {stat.total}回
@@ -498,7 +504,7 @@ const Statistics: React.FC = () => {
                       padding: '10px', 
                       textAlign: 'center',
                       fontWeight: 'bold',
-                      color: winRateNum > 15 ? '#155724' : winRateNum > 5 ? '#856404' : '#721c24'
+                      color: winRateNum > 15 ? '#155724' : winRateNum > 8 ? '#856404' : '#721c24'
                     }}>
                       {stat.winRate}%
                     </td>
@@ -522,13 +528,13 @@ const Statistics: React.FC = () => {
             <p>
               <strong>見方:</strong> 
               {showGraphs ? 
-                '棒グラフは人気別の勝率・連対率・複勝率を比較表示。円グラフは上位5番人気の勝数分布を表示。フィルタ条件で絞り込み可能。' :
-                '緑背景は勝率20%超の人気、期待値は単勝的中時に必要な最低オッズの目安です。複数選択したフィルタ条件のいずれかに該当するレースのみで統計を計算しています。'
+                '棒グラフは馬番別の勝率・連対率・複勝率を比較表示。円グラフは馬番別勝数分布を表示。フィルタ条件で絞り込み可能。' :
+                '緑背景は勝率15%超の馬番、期待値は単勝的中時に必要な最低オッズの目安です。複数選択したフィルタ条件のいずれかに該当するレースのみで統計を計算しています。'
               }
               <br />
-              {!showGraphs && '例: 1番人気の勝率が30%なら、3.3倍以上のオッズがあれば期待値プラス'}
+              {!showGraphs && '馬番の有利・不利傾向を分析できます。内枠（1-8番）と外枠（9-18番）での成績差なども確認可能。'}
               <br />
-              <small>※ 人気データが1～18番人気の範囲外の場合は統計から除外されます</small>
+              <small>※ 馬番データが1～18番の範囲外の場合は統計から除外されます</small>
             </p>
           </div>
         </>
@@ -536,7 +542,7 @@ const Statistics: React.FC = () => {
         <div style={{ textAlign: 'center', padding: '40px', backgroundColor: '#f8f9fa', borderRadius: '5px' }}>
           <p style={{ fontSize: '16px', color: '#666' }}>
             統計データがありません。<br />
-            レース結果を登録すると人気別の勝率統計が表示されます。
+            レース結果を登録すると馬番別の勝率統計が表示されます。
           </p>
         </div>
       )}
@@ -544,4 +550,4 @@ const Statistics: React.FC = () => {
   );
 };
 
-export default Statistics;
+export default HorseNumberStatistics;

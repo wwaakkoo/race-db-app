@@ -183,6 +183,17 @@ class LocalStorageApi {
     }
   }
 
+  // 馬番別統計
+  async getHorseNumberStatistics(filters: any = {}): Promise<any> {
+    try {
+      const races = await this.getRaces();
+      return this.calculateHorseNumberStats(races, filters);
+    } catch (error) {
+      console.error('馬番別統計取得エラー:', error);
+      return {};
+    }
+  }
+
   // 統計ベース重み計算
   async calculateOptimalWeights(): Promise<{ popularity: number; jockey: number; odds: number; base: number }> {
     try {
@@ -577,6 +588,11 @@ class LocalStorageApi {
     return stats;
   }
 
+  // 騎手名から記号を除去する関数
+  private cleanJockeyName(jockeyName: string): string {
+    return jockeyName.replace(/[▲★☆◇]/g, '').trim();
+  }
+
   // 騎手別統計計算
   private calculateJockeyStats(races: Race[], filters: any = {}) {
     const filteredRaces = this.filterRaces(races, filters);
@@ -586,11 +602,14 @@ class LocalStorageApi {
       if (!race.result) return;
 
       race.horses.forEach(horse => {
-        const jockey = horse.jockey;
-        if (!jockey) return;
+        const originalJockey = horse.jockey;
+        if (!originalJockey) return;
 
-        if (!stats[jockey]) {
-          stats[jockey] = {
+        // 騎手名から記号を除去
+        const cleanJockey = this.cleanJockeyName(originalJockey);
+
+        if (!stats[cleanJockey]) {
+          stats[cleanJockey] = {
             total: 0,
             wins: 0,
             places: 0,
@@ -603,15 +622,66 @@ class LocalStorageApi {
           };
         }
 
-        stats[jockey].total++;
-        stats[jockey].totalField += race.horses.length;
+        stats[cleanJockey].total++;
+        stats[cleanJockey].totalField += race.horses.length;
 
-        if (race.result?.["1着"] === horse.name) stats[jockey].wins++;
+        if (race.result?.["1着"] === horse.name) stats[cleanJockey].wins++;
         if (race.result?.["1着"] === horse.name || race.result?.["2着"] === horse.name) {
-          stats[jockey].places++;
+          stats[cleanJockey].places++;
         }
         if (race.result?.["1着"] === horse.name || race.result?.["2着"] === horse.name || race.result?.["3着"] === horse.name) {
-          stats[jockey].shows++;
+          stats[cleanJockey].shows++;
+        }
+      });
+    });
+
+    // 率の計算
+    Object.keys(stats).forEach(key => {
+      const s = stats[key];
+      s.winRate = s.total > 0 ? (s.wins / s.total * 100).toFixed(1) : "0.0";
+      s.placeRate = s.total > 0 ? (s.places / s.total * 100).toFixed(1) : "0.0";
+      s.showRate = s.total > 0 ? (s.shows / s.total * 100).toFixed(1) : "0.0";
+      s.avgField = s.total > 0 ? parseFloat((s.totalField / s.total).toFixed(1)) : 0;
+    });
+
+    return stats;
+  }
+
+  // 馬番別統計計算
+  private calculateHorseNumberStats(races: Race[], filters: any = {}) {
+    const filteredRaces = this.filterRaces(races, filters);
+    const stats: any = {};
+
+    filteredRaces.forEach(race => {
+      if (!race.result) return;
+
+      race.horses.forEach(horse => {
+        const horseNumber = horse.horseNumber;
+        if (!horseNumber || horseNumber < 1 || horseNumber > 18) return; // 1-18番の範囲内のみ
+
+        if (!stats[horseNumber]) {
+          stats[horseNumber] = {
+            total: 0,
+            wins: 0,
+            places: 0,
+            shows: 0,
+            winRate: "0.0",
+            placeRate: "0.0",
+            showRate: "0.0",
+            avgField: 0,
+            totalField: 0
+          };
+        }
+
+        stats[horseNumber].total++;
+        stats[horseNumber].totalField += race.horses.length;
+
+        if (race.result?.["1着"] === horse.name) stats[horseNumber].wins++;
+        if (race.result?.["1着"] === horse.name || race.result?.["2着"] === horse.name) {
+          stats[horseNumber].places++;
+        }
+        if (race.result?.["1着"] === horse.name || race.result?.["2着"] === horse.name || race.result?.["3着"] === horse.name) {
+          stats[horseNumber].shows++;
         }
       });
     });
@@ -673,8 +743,9 @@ class LocalStorageApi {
         const popularityScore = Math.max(0, (1 - (horse.popularity - 1) / horses.length));
         score += weights.popularity * popularityScore;
 
-        // 騎手統計による予測
-        const jockeyData = jockeyStats[horse.jockey];
+        // 騎手統計による予測（記号を除去した名前で検索）
+        const cleanJockeyName = this.cleanJockeyName(horse.jockey);
+        const jockeyData = jockeyStats[cleanJockeyName];
         if (jockeyData) {
           const jockeyScore = parseFloat(jockeyData.winRate) / 100;
           score += weights.jockey * jockeyScore;
@@ -694,7 +765,7 @@ class LocalStorageApi {
           factors: {
             popularity: { rate: popularityScore, weight: weights.popularity },
             jockey: { rate: jockeyData ? parseFloat(jockeyData.winRate) / 100 : 0, weight: weights.jockey },
-            odds: { rate: oddsScore, weight: weights.odds }
+            distance: { rate: oddsScore, weight: weights.odds }
           }
         };
       });
@@ -746,12 +817,13 @@ class LocalStorageApi {
 
     racesWithResults.forEach(race => {
       race.horses.forEach(horse => {
-        if (!jockeyStats[horse.jockey]) {
-          jockeyStats[horse.jockey] = { wins: 0, total: 0 };
+        const cleanJockeyName = this.cleanJockeyName(horse.jockey);
+        if (!jockeyStats[cleanJockeyName]) {
+          jockeyStats[cleanJockeyName] = { wins: 0, total: 0 };
         }
-        jockeyStats[horse.jockey].total++;
+        jockeyStats[cleanJockeyName].total++;
         if (race.result?.["1着"] === horse.name) {
-          jockeyStats[horse.jockey].wins++;
+          jockeyStats[cleanJockeyName].wins++;
         }
       });
     });

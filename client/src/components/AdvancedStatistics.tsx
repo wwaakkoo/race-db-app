@@ -42,6 +42,7 @@ const AdvancedStatistics: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [showGraphs, setShowGraphs] = useState(false);
   const [graphType, setGraphType] = useState<'bar' | 'scatter' | 'pie'>('bar');
+  const [sortConfig, setSortConfig] = useState<{key: string; direction: 'asc' | 'desc'} | null>(null);
   
   // フィルタ状態（複数選択対応）
   const [filters, setFilters] = useState({
@@ -397,10 +398,73 @@ const AdvancedStatistics: React.FC = () => {
     </div>
   );
 
+  // ソート処理関数
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  // ソートボタンのアイコン
+  const getSortIcon = (key: string) => {
+    if (!sortConfig || sortConfig.key !== key) {
+      return ' ↕';
+    }
+    return sortConfig.direction === 'asc' ? ' ↑' : ' ↓';
+  };
+
   const renderJockeyStats = () => {
-    const sortedJockeys = Object.entries(jockeyStats)
-      .filter(([_, stats]) => stats.total >= 3) // 3回以上騎乗した騎手のみ表示
-      .sort(([_, a], [__, b]) => parseFloat(b.winRate) - parseFloat(a.winRate));
+    let sortedJockeys = Object.entries(jockeyStats)
+      .filter(([_, stats]) => stats.total >= 3); // 3回以上騎乗した騎手のみ表示
+
+    // ソート設定がある場合はそれに従って並び替え
+    if (sortConfig) {
+      sortedJockeys.sort(([jockeyA, statsA], [jockeyB, statsB]) => {
+        let aValue: any, bValue: any;
+        
+        switch (sortConfig.key) {
+          case 'jockey':
+            aValue = jockeyA;
+            bValue = jockeyB;
+            break;
+          case 'total':
+            aValue = statsA.total;
+            bValue = statsB.total;
+            break;
+          case 'wins':
+            aValue = statsA.wins;
+            bValue = statsB.wins;
+            break;
+          case 'winRate':
+            aValue = parseFloat(statsA.winRate);
+            bValue = parseFloat(statsB.winRate);
+            break;
+          case 'placeRate':
+            aValue = parseFloat(statsA.placeRate);
+            bValue = parseFloat(statsB.placeRate);
+            break;
+          case 'showRate':
+            aValue = parseFloat(statsA.showRate);
+            bValue = parseFloat(statsB.showRate);
+            break;
+          default:
+            return 0;
+        }
+        
+        if (aValue < bValue) {
+          return sortConfig.direction === 'asc' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'asc' ? 1 : -1;
+        }
+        return 0;
+      });
+    } else {
+      // デフォルトは勝率順（降順）
+      sortedJockeys.sort(([_, a], [__, b]) => parseFloat(b.winRate) - parseFloat(a.winRate));
+    }
 
     return (
       <div>
@@ -421,12 +485,48 @@ const AdvancedStatistics: React.FC = () => {
         <table style={{ width: '100%', borderCollapse: 'collapse', marginTop: '10px' }}>
           <thead>
             <tr style={{ backgroundColor: '#e9ecef' }}>
-              <th style={{ border: '1px solid #ddd', padding: '12px', fontWeight: 'bold' }}>騎手</th>
-              <th style={{ border: '1px solid #ddd', padding: '12px', fontWeight: 'bold' }}>騎乗数</th>
-              <th style={{ border: '1px solid #ddd', padding: '12px', fontWeight: 'bold' }}>1着</th>
-              <th style={{ border: '1px solid #ddd', padding: '12px', fontWeight: 'bold' }}>勝率</th>
-              <th style={{ border: '1px solid #ddd', padding: '12px', fontWeight: 'bold' }}>連対率</th>
-              <th style={{ border: '1px solid #ddd', padding: '12px', fontWeight: 'bold' }}>複勝率</th>
+              <th 
+                style={{ border: '1px solid #ddd', padding: '12px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}
+                onClick={() => handleSort('jockey')}
+                title="クリックでソート"
+              >
+                騎手{getSortIcon('jockey')}
+              </th>
+              <th 
+                style={{ border: '1px solid #ddd', padding: '12px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}
+                onClick={() => handleSort('total')}
+                title="クリックでソート"
+              >
+                騎乗数{getSortIcon('total')}
+              </th>
+              <th 
+                style={{ border: '1px solid #ddd', padding: '12px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}
+                onClick={() => handleSort('wins')}
+                title="クリックでソート"
+              >
+                1着{getSortIcon('wins')}
+              </th>
+              <th 
+                style={{ border: '1px solid #ddd', padding: '12px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}
+                onClick={() => handleSort('winRate')}
+                title="クリックでソート"
+              >
+                勝率{getSortIcon('winRate')}
+              </th>
+              <th 
+                style={{ border: '1px solid #ddd', padding: '12px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}
+                onClick={() => handleSort('placeRate')}
+                title="クリックでソート"
+              >
+                連対率{getSortIcon('placeRate')}
+              </th>
+              <th 
+                style={{ border: '1px solid #ddd', padding: '12px', fontWeight: 'bold', cursor: 'pointer', userSelect: 'none' }}
+                onClick={() => handleSort('showRate')}
+                title="クリックでソート"
+              >
+                複勝率{getSortIcon('showRate')}
+              </th>
             </tr>
           </thead>
           <tbody>
