@@ -810,7 +810,7 @@ const RaceForm = () => {
           </ol>
           <p style={{ fontSize: '12px', color: '#6c757d', margin: '10px 0 0 0' }}>
             ※ Bookmarkletは
-            <a href="/bookmarklet.html" target="_blank" style={{ color: '#007bff', textDecoration: 'none' }}>
+            <a href="/race-db-app/bookmarklet.html" target="_blank" style={{ color: '#007bff', textDecoration: 'none' }}>
               こちらのページ
             </a>
             で取得できます
