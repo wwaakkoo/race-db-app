@@ -132,7 +132,7 @@ const RaceForm = () => {
       
     } catch (error) {
       console.error('JSONデータ処理エラー:', error);
-      alert('JSONデータの処理に失敗しました: ' + error.message);
+      alert('JSONデータの処理に失敗しました: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setJsonLoading(false);
     }
