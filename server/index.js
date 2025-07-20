@@ -741,6 +741,288 @@ app.post('/api/analysis/strategy', (req, res) => {
   }
 });
 
+// 共通のデータ抽出関数
+function extractRaceData($) {
+  // Cheerioを使用してHTMLを解析
+  const scrapedData = {
+    // レース基本情報の抽出
+    raceTitle: $('.RaceName').text().trim() || '',
+    raceData01: $('.RaceData01').text().trim() || '',
+    raceData02: $('.RaceData02').text().trim() || '',
+    horses: []
+  };
+  
+  // 馬一覧テーブルの抽出
+  const horsesTable = $('.Shutuba_Table');
+  
+  if (horsesTable.length > 0) {
+    horsesTable.find('tbody tr').each((index, row) => {
+      const cells = $(row).find('td');
+      
+      if (cells.length >= 11) {
+        const frameNumber = parseInt($(cells[0]).text().trim()) || 0;
+        const horseNumber = parseInt($(cells[1]).text().trim()) || 0;
+        const horseName = $(cells[3]).find('a').text().trim() || $(cells[3]).text().trim() || '';
+        const sexAge = $(cells[4]).text().trim() || '';
+        const weight = parseFloat($(cells[5]).text().trim()) || 0;
+        const jockey = $(cells[6]).find('a').text().trim() || $(cells[6]).text().trim() || '';
+        
+        // オッズと人気の取得を修正
+        const oddsText = $(cells[9]).text().trim();
+        const popularityText = $(cells[10]).text().trim();
+        
+        const odds = oddsText === '---.-' || oddsText === '**' ? 0 : parseFloat(oddsText) || 0;
+        const popularity = popularityText === '**' || popularityText === '--' ? 0 : parseInt(popularityText) || 0;
+        
+        // 性別と年齢を分離
+        const sexMatch = sexAge.match(/([牡牝セ])/);
+        const ageMatch = sexAge.match(/(\d+)/);
+        const sex = sexMatch ? sexMatch[1] : '';
+        const age = ageMatch ? parseInt(ageMatch[1]) : 0;
+        
+        if (horseName) {
+          scrapedData.horses.push({
+            frameNumber,
+            horseNumber,
+            name: horseName,
+            sex,
+            age,
+            weight,
+            jockey,
+            odds,
+            popularity
+          });
+        }
+      }
+    });
+  }
+  
+  return scrapedData;
+}
+
+// ✅ POST: netkeiba出馬表データスクレイピング（複数レース対応）
+app.post('/api/scrape/netkeiba-batch', async (req, res) => {
+  const axios = require('axios');
+  const cheerio = require('cheerio');
+  const iconv = require('iconv-lite');
+  const { baseUrl, startRace = 1, endRace = 12 } = req.body;
+  
+  if (!baseUrl || !baseUrl.includes('race.netkeiba.com')) {
+    return res.status(400).json({ error: '有効なnetkeiba URLを入力してください' });
+  }
+  
+  try {
+    console.log(`🔄 netkeiba 複数レースデータ取得開始: R${startRace}-R${endRace}`);
+    
+    const results = [];
+    const errors = [];
+    
+    for (let raceNum = startRace; raceNum <= endRace; raceNum++) {
+      try {
+        // URLの末尾2桁を変更してレース番号を生成
+        const raceId = baseUrl.match(/race_id=(\d+)/)?.[1];
+        if (!raceId) {
+          throw new Error('レースIDが取得できません');
+        }
+        
+        const newRaceId = raceId.slice(0, -2) + raceNum.toString().padStart(2, '0');
+        const raceUrl = baseUrl.replace(/race_id=\d+/, `race_id=${newRaceId}`);
+        
+        console.log(`📊 R${raceNum} 取得中: ${raceUrl}`);
+        
+        const response = await axios.get(raceUrl, {
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+          },
+          timeout: 30000,
+          responseType: 'arraybuffer'
+        });
+        
+        const html = iconv.decode(response.data, 'euc-jp');
+        const $ = cheerio.load(html);
+        
+        const scrapedData = extractRaceData($);
+        
+        if (scrapedData.raceTitle && scrapedData.horses.length > 0) {
+          const processedData = processNetkeibaData(scrapedData);
+          results.push({
+            raceNumber: raceNum,
+            url: raceUrl,
+            data: processedData,
+            raw: scrapedData
+          });
+          console.log(`✅ R${raceNum} 成功: ${scrapedData.raceTitle} (${scrapedData.horses.length}頭)`);
+        } else {
+          errors.push({
+            raceNumber: raceNum,
+            url: raceUrl,
+            error: 'レースデータが見つかりません'
+          });
+        }
+        
+        // レート制限対策
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+      } catch (error) {
+        console.error(`❌ R${raceNum} エラー:`, error.message);
+        errors.push({
+          raceNumber: raceNum,
+          error: error.message
+        });
+      }
+    }
+    
+    console.log(`✅ バッチ処理完了: 成功${results.length}件, エラー${errors.length}件`);
+    res.json({
+      success: true,
+      total: results.length,
+      results,
+      errors
+    });
+    
+  } catch (error) {
+    console.error('❌ バッチスクレイピングエラー:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'バッチデータ取得に失敗しました: ' + error.message 
+    });
+  }
+});
+
+// ✅ POST: netkeiba出馬表データスクレイピング（単体）
+app.post('/api/scrape/netkeiba', async (req, res) => {
+  const axios = require('axios');
+  const cheerio = require('cheerio');
+  const { url } = req.body;
+  
+  if (!url || !url.includes('race.netkeiba.com')) {
+    return res.status(400).json({ error: '有効なnetkeiba URLを入力してください' });
+  }
+  
+  try {
+    console.log('🔄 netkeiba データ取得開始:', url);
+    
+    // AxiosでHTTP GETリクエスト
+    const response = await axios.get(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
+      },
+      timeout: 30000,
+      responseType: 'arraybuffer'
+    });
+    
+    // 文字エンコーディングを適切に処理
+    const iconv = require('iconv-lite');
+    const html = iconv.decode(response.data, 'euc-jp');
+    
+    // CheerioでHTMLを解析
+    const $ = cheerio.load(html);
+    
+    // 共通の抽出関数を使用
+    const scrapedData = extractRaceData($);
+    
+    // レースデータを既存形式に変換
+    const processedData = processNetkeibaData(scrapedData);
+    
+    console.log('✅ netkeiba データ取得成功:', processedData);
+    res.json({
+      success: true,
+      data: processedData,
+      raw: scrapedData
+    });
+    
+  } catch (error) {
+    console.error('❌ netkeiba スクレイピングエラー:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'データ取得に失敗しました: ' + error.message 
+    });
+  }
+});
+
+// netkeiba データを既存形式に変換する関数
+function processNetkeibaData(scrapedData) {
+  const { raceTitle, raceData01, raceData02, horses } = scrapedData;
+  
+  // 日付を抽出 (URLから取得する方が確実だが、ページからも試行)
+  const today = new Date().toISOString().split('T')[0];
+  
+  // 距離と馬場を抽出
+  let distance = 1600; // デフォルト値
+  let surface = '芝'; // デフォルト値
+  let condition = '良'; // デフォルト値
+  let course = '東京'; // デフォルト値
+  
+  if (raceData01) {
+    // 距離抽出 (例: "ダ1150m" から "1150" を抽出)
+    const distanceMatch = raceData01.match(/[芝ダ]?(\d+)m/);
+    if (distanceMatch) {
+      distance = parseInt(distanceMatch[1]);
+    }
+    
+    // 馬場抽出（ダート記号を検出）
+    if (raceData01.includes('ダ') || raceData01.includes('ダート')) {
+      surface = 'ダート';
+    } else if (raceData01.includes('芝')) {
+      surface = '芝';
+    }
+    
+    // 馬場状態抽出
+    if (raceData01.includes('稍重')) condition = '稍重';
+    else if (raceData01.includes('重')) condition = '重';
+    else if (raceData01.includes('不良')) condition = '不良';
+    else if (raceData01.includes('良')) condition = '良';
+  }
+  
+  // コース情報を抽出
+  if (raceData02) {
+    if (raceData02.includes('中山')) course = '中山';
+    else if (raceData02.includes('東京')) course = '東京';
+    else if (raceData02.includes('阪神')) course = '阪神';
+    else if (raceData02.includes('京都')) course = '京都';
+    else if (raceData02.includes('福島')) course = '福島';
+    else if (raceData02.includes('新潟')) course = '新潟';
+    else if (raceData02.includes('中京')) course = '中京';
+    else if (raceData02.includes('小倉')) course = '小倉';
+    else if (raceData02.includes('札幌')) course = '札幌';
+    else if (raceData02.includes('函館')) course = '函館';
+  }
+  
+  // レースレベルを詳細に推定
+  let level = '未勝利';
+  
+  // グレード競走
+  if (raceTitle.includes('G1') || raceTitle.includes('(G1)')) level = 'G1';
+  else if (raceTitle.includes('G2') || raceTitle.includes('(G2)')) level = 'G2';
+  else if (raceTitle.includes('G3') || raceTitle.includes('(G3)')) level = 'G3';
+  
+  // オープン競走
+  else if (raceData02 && raceData02.includes('オープン')) level = 'オープン';
+  else if (raceTitle.includes('オープン') || raceTitle.includes('OP')) level = 'オープン';
+  
+  // 条件戦
+  else if (raceData02 && raceData02.includes('3勝クラス')) level = '3勝';
+  else if (raceData02 && raceData02.includes('2勝クラス')) level = '2勝';
+  else if (raceData02 && raceData02.includes('1勝クラス')) level = '1勝';
+  else if (raceTitle.includes('3勝')) level = '3勝';
+  else if (raceTitle.includes('2勝')) level = '2勝';
+  else if (raceTitle.includes('1勝')) level = '1勝';
+  
+  // 新馬・未勝利
+  else if (raceTitle.includes('新馬') || raceData02?.includes('新馬')) level = '新馬';
+  else if (raceTitle.includes('未勝利') || raceData02?.includes('未勝利')) level = '未勝利';
+  
+  return {
+    date: today,
+    course,
+    distance,
+    surface,
+    condition,
+    level,
+    horses: horses.sort((a, b) => a.horseNumber - b.horseNumber)
+  };
+}
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });

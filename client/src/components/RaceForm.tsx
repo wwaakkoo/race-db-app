@@ -101,6 +101,138 @@ const RaceForm = () => {
   const [showWeightSettings, setShowWeightSettings] = useState(false);
   const [optimizing, setOptimizing] = useState(false);
   const [optimizationResult, setOptimizationResult] = useState<string>('');
+  
+  // GitHub Pages版: Bookmarklet用のstate
+  const [jsonData, setJsonData] = useState('');
+  const [jsonLoading, setJsonLoading] = useState(false);
+
+  // Bookmarkletから取得したJSONデータを処理する関数
+  const processBookmarkletData = () => {
+    try {
+      setJsonLoading(true);
+      
+      if (!jsonData.trim()) {
+        alert('JSONデータを入力してください');
+        return;
+      }
+      
+      console.log('Bookmarklet JSONデータ処理開始');
+      
+      // JSONをパース
+      const scrapedData = JSON.parse(jsonData);
+      
+      // データを既存形式に変換
+      const processedData = processBookmarkletToRaceData(scrapedData);
+      
+      // フォームに自動入力
+      autoFillForm(processedData);
+      
+      alert('データの入力が完了しました！');
+      setJsonData(''); // 入力フィールドをクリア
+      
+    } catch (error) {
+      console.error('JSONデータ処理エラー:', error);
+      alert('JSONデータの処理に失敗しました: ' + error.message);
+    } finally {
+      setJsonLoading(false);
+    }
+  };
+
+  // Bookmarkletデータを既存形式に変換
+  const processBookmarkletToRaceData = (scrapedData: any) => {
+    const { raceTitle, raceData01, raceData02, horses } = scrapedData;
+    
+    // 日付を抽出
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 距離と馬場を抽出
+    let distance = 1600;
+    let surface = '芝';
+    let condition = '良';
+    let course = '東京';
+    
+    if (raceData01) {
+      // 距離抽出
+      const distanceMatch = raceData01.match(/[芝ダ]?(\d+)m/);
+      if (distanceMatch) {
+        distance = parseInt(distanceMatch[1]);
+      }
+      
+      // 馬場抽出
+      if (raceData01.includes('ダ') || raceData01.includes('ダート')) {
+        surface = 'ダート';
+      } else if (raceData01.includes('芝')) {
+        surface = '芝';
+      }
+      
+      // 馬場状態抽出
+      if (raceData01.includes('稍重')) condition = '稍重';
+      else if (raceData01.includes('重')) condition = '重';
+      else if (raceData01.includes('不良')) condition = '不良';
+      else if (raceData01.includes('良')) condition = '良';
+    }
+    
+    // コース情報を抽出
+    if (raceData02) {
+      if (raceData02.includes('中山')) course = '中山';
+      else if (raceData02.includes('東京')) course = '東京';
+      else if (raceData02.includes('阪神')) course = '阪神';
+      else if (raceData02.includes('京都')) course = '京都';
+      else if (raceData02.includes('福島')) course = '福島';
+      else if (raceData02.includes('新潟')) course = '新潟';
+      else if (raceData02.includes('中京')) course = '中京';
+      else if (raceData02.includes('小倉')) course = '小倉';
+      else if (raceData02.includes('札幌')) course = '札幌';
+      else if (raceData02.includes('函館')) course = '函館';
+    }
+    
+    // レースレベルを推定
+    let level = '未勝利';
+    if (raceTitle.includes('G1') || raceTitle.includes('(G1)')) level = 'G1';
+    else if (raceTitle.includes('G2') || raceTitle.includes('(G2)')) level = 'G2';
+    else if (raceTitle.includes('G3') || raceTitle.includes('(G3)')) level = 'G3';
+    else if (raceData02 && raceData02.includes('オープン')) level = 'オープン';
+    else if (raceTitle.includes('オープン') || raceTitle.includes('OP')) level = 'オープン';
+    else if (raceData02 && raceData02.includes('3勝クラス')) level = '3勝';
+    else if (raceData02 && raceData02.includes('2勝クラス')) level = '2勝';
+    else if (raceData02 && raceData02.includes('1勝クラス')) level = '1勝';
+    else if (raceTitle.includes('3勝')) level = '3勝';
+    else if (raceTitle.includes('2勝')) level = '2勝';
+    else if (raceTitle.includes('1勝')) level = '1勝';
+    else if (raceTitle.includes('新馬') || raceData02?.includes('新馬')) level = '新馬';
+    else if (raceTitle.includes('未勝利') || raceData02?.includes('未勝利')) level = '未勝利';
+    
+    return {
+      date: today,
+      course,
+      distance,
+      surface,
+      condition,
+      level,
+      horses: horses || []
+    };
+  };
+
+  // 自動入力関数
+  const autoFillForm = (scrapedData: any) => {
+    console.log('自動入力データ:', scrapedData);
+    
+    // レース情報を設定
+    setRaceInfo(prev => ({
+      ...prev,
+      date: scrapedData.date || prev.date,
+      course: scrapedData.course || prev.course,
+      distance: scrapedData.distance?.toString() || prev.distance,
+      surface: scrapedData.surface || prev.surface,
+      condition: scrapedData.condition || prev.condition,
+      level: scrapedData.level || prev.level
+    }));
+    
+    // 馬データを設定
+    if (scrapedData.horses && scrapedData.horses.length > 0) {
+      setHorses(scrapedData.horses);
+    }
+  };
 
   // レース情報自動抽出
   const extractRaceInfo = (text: string) => {
@@ -578,6 +710,111 @@ const RaceForm = () => {
               {l}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* Bookmarklet入力セクション */}
+      <div style={{ marginBottom: '20px', backgroundColor: '#e8f4fd', padding: '15px', borderRadius: '8px' }}>
+        <h2>🔖 Bookmarklet データ入力</h2>
+        <p style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
+          Bookmarkletで取得したJSONデータを貼り付けて、レース情報と馬データを一括入力できます
+        </p>
+        
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '14px' }}>
+            📋 Bookmarkletで取得したJSONデータ:
+          </label>
+          <textarea
+            value={jsonData}
+            onChange={(e) => setJsonData(e.target.value)}
+            placeholder='{"raceTitle":"レース名","raceData01":"距離・コース情報","raceData02":"開催情報","horses":[...]}'
+            rows={6}
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '12px',
+              fontFamily: 'monospace',
+              backgroundColor: '#f8f9fa',
+              resize: 'vertical'
+            }}
+          />
+        </div>
+        
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={processBookmarkletData}
+            disabled={jsonLoading || !jsonData.trim()}
+            style={{
+              backgroundColor: jsonLoading ? '#6c757d' : '#007bff',
+              color: 'white',
+              padding: '10px 20px',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: jsonLoading ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            }}
+          >
+            {jsonLoading ? '処理中...' : '📊 データを入力'}
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => setJsonData('')}
+            style={{
+              backgroundColor: '#6c757d',
+              color: 'white',
+              padding: '10px 16px',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            🗑️ クリア
+          </button>
+        </div>
+        
+        {jsonLoading && (
+          <div style={{ 
+            marginTop: '15px', 
+            padding: '12px', 
+            backgroundColor: '#fff3cd', 
+            borderRadius: '4px',
+            fontSize: '14px',
+            color: '#856404',
+            border: '1px solid #ffeaa7'
+          }}>
+            📊 JSONデータを処理しています...
+          </div>
+        )}
+        
+        <div style={{ 
+          marginTop: '15px', 
+          padding: '12px', 
+          backgroundColor: '#d1ecf1', 
+          borderRadius: '4px',
+          border: '1px solid #bee5eb'
+        }}>
+          <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', color: '#0c5460' }}>
+            💡 Bookmarkletの使い方
+          </h4>
+          <ol style={{ fontSize: '13px', color: '#0c5460', margin: '0', paddingLeft: '20px' }}>
+            <li>netkeibaのレースページを開く</li>
+            <li>Bookmarkletを実行してデータを取得</li>
+            <li>取得されたJSONデータを上のテキストエリアに貼り付け</li>
+            <li>「データを入力」ボタンをクリック</li>
+          </ol>
+          <p style={{ fontSize: '12px', color: '#6c757d', margin: '10px 0 0 0' }}>
+            ※ Bookmarkletは
+            <a href="/bookmarklet.html" target="_blank" style={{ color: '#007bff', textDecoration: 'none' }}>
+              こちらのページ
+            </a>
+            で取得できます
+          </p>
         </div>
       </div>
 
