@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>競馬データ抽出Bookmarklet - Race DB App</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+      line-height: 1.6;
+      color: #333;
+      background-color: #f8f9fa;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #007bff;
+      text-align: center;
+      margin-bottom: 30px;
+      font-size: 28px;
+    }
+    h2 {
+      color: #495057;
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 8px;
+      margin-top: 30px;
+    }
+    .bookmarklet {
+      background-color: #e8f4fd;
+      border: 2px solid #007bff;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      text-align: center;
+    }
+    .bookmarklet-link {
+      display: inline-block;
+      background-color: #007bff;
+      color: white;
+      padding: 15px 30px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      font-size: 16px;
+      cursor: grab;
+      transition: background-color 0.3s;
+    }
+    .bookmarklet-link:hover {
+      background-color: #0056b3;
+    }
+    .step {
+      background-color: #f8f9fa;
+      border-left: 4px solid #28a745;
+      padding: 15px;
+      margin: 15px 0;
+      border-radius: 0 8px 8px 0;
+    }
+    .step h3 {
+      margin-top: 0;
+      color: #28a745;
+    }
+    .warning {
+      background-color: #fff3cd;
+      border: 1px solid #ffeaa7;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    .warning h3 {
+      color: #856404;
+      margin-top: 0;
+    }
+    .code {
+      background-color: #f1f3f4;
+      border: 1px solid #d1d5db;
+      border-radius: 6px;
+      padding: 15px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 12px;
+      overflow-x: auto;
+      margin: 15px 0;
+    }
+    .back-link {
+      text-align: center;
+      margin-top: 30px;
+    }
+    .back-link a {
+      color: #007bff;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    .back-link a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔖 競馬データ抽出Bookmarklet</h1>
+    
+    <p>netkeibaのレースページから競馬データを簡単に抽出できるBookmarkletです。<br>
+    ブラウザのブックマークバーにドラッグ&ドロップして設置してください。</p>
+
+    <div class="warning">
+      <h3>⚠️ 重要な注意事項</h3>
+      <ul>
+        <li><strong>個人利用・研究用途に限定</strong>してください</li>
+        <li><strong>商用利用は禁止</strong>されています</li>
+        <li>過度な連続実行は避け、<strong>適度な間隔</strong>を開けて使用してください</li>
+        <li>netkeibaの利用規約を遵守してください</li>
+      </ul>
+    </div>
+
+    <h2>📥 Bookmarklet設置</h2>
+    
+    <div class="bookmarklet">
+      <p><strong>下のリンクをブックマークバーにドラッグ&ドロップしてください</strong></p>
+      <a href="javascript:(function(){try{const r=document.querySelector('.RaceName')?.textContent?.trim()||'',a=document.querySelector('.RaceData01')?.textContent?.trim()||'',t=document.querySelector('.RaceData02')?.textContent?.trim()||'',e=[];document.querySelectorAll('.Shutuba_Table tbody tr').forEach(r=>{const a=r.querySelectorAll('td');if(a.length>=11){const r=parseInt(a[0]?.textContent?.trim())||0,t=parseInt(a[1]?.textContent?.trim())||0,o=a[3]?.querySelector('a')?.textContent?.trim()||a[3]?.textContent?.trim()||'',n=a[4]?.textContent?.trim()||'',s=parseFloat(a[5]?.textContent?.trim())||0,c=a[6]?.querySelector('a')?.textContent?.trim()||a[6]?.textContent?.trim()||'';o&&e.push({frameNumber:r,horseNumber:t,name:o,sex:n.match(/([牡牝セ])/)?.[1]||'',age:parseInt(n.match(/(\d+)/)?.[1])||0,weight:s,jockey:c,odds:0,popularity:0})}});const o={raceTitle:r,raceData01:a,raceData02:t,horses:e};navigator.clipboard.writeText(JSON.stringify(o)).then(()=>{alert(`データを抽出しました！\nレース: ${r}\n馬数: ${e.length}頭\n\nクリップボードにコピーしたので、アプリで貼り付けてください。`)})}catch(r){alert('データ抽出に失敗しました: '+r.message)}})();" 
+           class="bookmarklet-link">
+        🏇 netkeibaデータ抽出
+      </a>
+    </div>
+
+    <h2>📋 使用方法</h2>
+    
+    <div class="step">
+      <h3>ステップ 1: Bookmarklet設置</h3>
+      <p>上のリンクをブラウザのブックマークバーにドラッグ&ドロップしてください。</p>
+    </div>
+
+    <div class="step">
+      <h3>ステップ 2: netkeibaページを開く</h3>
+      <p>netkeibaのレースページ（出馬表ページ）を開いてください。<br>
+      例: <code>https://race.netkeiba.com/race/shutuba.html?race_id=...</code></p>
+    </div>
+
+    <div class="step">
+      <h3>ステップ 3: Bookmarklet実行</h3>
+      <p>ブックマークバーの「🏇 netkeibaデータ抽出」をクリックしてください。<br>
+      データが抽出され、クリップボードにコピーされます。</p>
+    </div>
+
+    <div class="step">
+      <h3>ステップ 4: アプリで貼り付け</h3>
+      <p>Race DB Appの「Bookmarklet データ入力」セクションにJSONデータを貼り付けて、<br>
+      「📊 データを入力」ボタンをクリックしてください。</p>
+    </div>
+
+    <h2>🔧 技術詳細</h2>
+    
+    <p>Bookmarkletは以下のデータを抽出します：</p>
+    <ul>
+      <li><strong>レース情報</strong>: レース名、距離、馬場、コース</li>
+      <li><strong>馬データ</strong>: 枠番、馬番、馬名、性別、年齢、斤量、騎手</li>
+    </ul>
+
+    <details>
+      <summary><strong>Bookmarkletソースコード（参考）</strong></summary>
+      <div class="code">
+javascript:(function(){
+  try {
+    // レース基本情報を抽出
+    const raceTitle = document.querySelector('.RaceName')?.textContent?.trim() || '';
+    const raceData01 = document.querySelector('.RaceData01')?.textContent?.trim() || '';
+    const raceData02 = document.querySelector('.RaceData02')?.textContent?.trim() || '';
+    
+    // 馬データを抽出
+    const horses = [];
+    document.querySelectorAll('.Shutuba_Table tbody tr').forEach(row => {
+      const cells = row.querySelectorAll('td');
+      if (cells.length >= 11) {
+        const frameNumber = parseInt(cells[0]?.textContent?.trim()) || 0;
+        const horseNumber = parseInt(cells[1]?.textContent?.trim()) || 0;
+        const horseName = cells[3]?.querySelector('a')?.textContent?.trim() || 
+                         cells[3]?.textContent?.trim() || '';
+        const sexAge = cells[4]?.textContent?.trim() || '';
+        const weight = parseFloat(cells[5]?.textContent?.trim()) || 0;
+        const jockey = cells[6]?.querySelector('a')?.textContent?.trim() || 
+                      cells[6]?.textContent?.trim() || '';
+        
+        if (horseName) {
+          horses.push({
+            frameNumber, horseNumber, name: horseName,
+            sex: sexAge.match(/([牡牝セ])/)?.[1] || '',
+            age: parseInt(sexAge.match(/(\d+)/)?.[1]) || 0,
+            weight, jockey, odds: 0, popularity: 0
+          });
+        }
+      }
+    });
+    
+    // データをJSONに変換してクリップボードにコピー
+    const data = { raceTitle, raceData01, raceData02, horses };
+    navigator.clipboard.writeText(JSON.stringify(data)).then(() => {
+      alert(`データを抽出しました！\nレース: ${raceTitle}\n馬数: ${horses.length}頭\n\nクリップボードにコピーしたので、アプリで貼り付けてください。`);
+    });
+    
+  } catch (error) {
+    alert('データ抽出に失敗しました: ' + error.message);
+  }
+})();
+      </div>
+    </details>
+
+    <h2>🐛 トラブルシューティング</h2>
+    
+    <h3>データが取得できない場合</h3>
+    <ul>
+      <li>netkeibaの出馬表ページで実行していることを確認してください</li>
+      <li>ページが完全に読み込まれてから実行してください</li>
+      <li>ブラウザのJavaScriptが有効になっていることを確認してください</li>
+    </ul>
+
+    <h3>クリップボードにコピーされない場合</h3>
+    <ul>
+      <li>ブラウザがクリップボードアクセスを許可していることを確認してください</li>
+      <li>HTTPS接続で動作することを確認してください</li>
+    </ul>
+
+    <div class="back-link">
+      <a href="/race-db-app/">← Race DB Appに戻る</a>
+    </div>
+  </div>
+</body>
+</html>
