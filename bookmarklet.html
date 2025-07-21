@@ -122,9 +122,19 @@
     
     <div class="bookmarklet">
       <p><strong>下のリンクをブックマークバーにドラッグ&ドロップしてください</strong></p>
-      <a href="javascript:(function(){try{const r=document.querySelector('.RaceName')?.textContent?.trim()||'',a=document.querySelector('.RaceData01')?.textContent?.trim()||'',t=document.querySelector('.RaceData02')?.textContent?.trim()||'',e=[];document.querySelectorAll('.Shutuba_Table tbody tr').forEach(r=>{const a=r.querySelectorAll('td');if(a.length>=11){const r=parseInt(a[0]?.textContent?.trim())||0,t=parseInt(a[1]?.textContent?.trim())||0,o=a[3]?.querySelector('a')?.textContent?.trim()||a[3]?.textContent?.trim()||'',n=a[4]?.textContent?.trim()||'',s=parseFloat(a[5]?.textContent?.trim())||0,c=a[6]?.querySelector('a')?.textContent?.trim()||a[6]?.textContent?.trim()||'';o&&e.push({frameNumber:r,horseNumber:t,name:o,sex:n.match(/([牡牝セ])/)?.[1]||'',age:parseInt(n.match(/(\d+)/)?.[1])||0,weight:s,jockey:c,odds:0,popularity:0})}});const o={raceTitle:r,raceData01:a,raceData02:t,horses:e};navigator.clipboard.writeText(JSON.stringify(o)).then(()=>{alert(`データを抽出しました！\nレース: ${r}\n馬数: ${e.length}頭\n\nクリップボードにコピーしたので、アプリで貼り付けてください。`)})}catch(r){alert('データ抽出に失敗しました: '+r.message)}})();" 
+      
+      <!-- 通常版Bookmarklet -->
+      <a href="javascript:(function(){try{const raceTitle=document.querySelector('.RaceName')?.textContent?.trim()||'';const raceData01=document.querySelector('.RaceData01')?.textContent?.trim()||'';const raceData02=document.querySelector('.RaceData02')?.textContent?.trim()||'';const horses=[];document.querySelectorAll('.Shutuba_Table tbody tr').forEach(row=>{const cells=row.querySelectorAll('td');if(cells.length>=11){const frameNumber=parseInt(cells[0]?.textContent?.trim())||0;const horseNumber=parseInt(cells[1]?.textContent?.trim())||0;const horseName=cells[3]?.querySelector('a')?.textContent?.trim()||cells[3]?.textContent?.trim()||'';const sexAge=cells[4]?.textContent?.trim()||'';const weight=parseFloat(cells[5]?.textContent?.trim())||0;const jockey=cells[6]?.querySelector('a')?.textContent?.trim()||cells[6]?.textContent?.trim()||'';if(horseName){horses.push({frameNumber,horseNumber,name:horseName,sex:sexAge.match(/([牡牝セ])/)?.[1]||'',age:parseInt(sexAge.match(/(\d+)/)?.[1])||0,weight,jockey,odds:0,popularity:0});}}});const data={raceTitle,raceData01,raceData02,horses};navigator.clipboard.writeText(JSON.stringify(data)).then(()=>{alert(`データを抽出しました！\nレース: ${raceTitle}\n馬数: ${horses.length}頭\n\nクリップボードにコピーしたので、アプリで貼り付けてください。`);})}catch(error){alert('データ抽出に失敗しました: '+error.message);}})()" 
            class="bookmarklet-link">
-        🏇 netkeibaデータ抽出
+        🏇 netkeibaデータ抽出（通常版）
+      </a>
+      
+      <br><br>
+      
+      <!-- デバッグ版Bookmarklet -->
+      <a href="javascript:(function(){console.log('🚀 Bookmarklet開始！');alert('Bookmarklet開始！コンソールを確認してください');try{console.log('📄 ページURL:', window.location.href);const raceTitle=document.querySelector('.RaceName')?.textContent?.trim()||'';const raceData01=document.querySelector('.RaceData01')?.textContent?.trim()||'';const raceData02=document.querySelector('.RaceData02')?.textContent?.trim()||'';console.log('🏇 レース名:', raceTitle);console.log('📊 レースデータ01:', raceData01);console.log('📊 レースデータ02:', raceData02);const horses=[];const tableRows=document.querySelectorAll('.Shutuba_Table tbody tr');console.log('📋 見つかったテーブル行数:', tableRows.length);tableRows.forEach((row,index)=>{const cells=row.querySelectorAll('td');console.log(`🐎 馬${index+1}: セル数=${cells.length}`);if(cells.length>=11){const frameNumber=parseInt(cells[0]?.textContent?.trim())||0;const horseNumber=parseInt(cells[1]?.textContent?.trim())||0;const horseName=cells[3]?.querySelector('a')?.textContent?.trim()||cells[3]?.textContent?.trim()||'';console.log(`  枠${frameNumber}_馬${horseNumber}: ${horseName}`);if(horseName){horses.push({frameNumber,horseNumber,name:horseName,sex:'',age:0,weight:0,jockey:'',odds:0,popularity:0});}}});console.log('✅ 抽出完了:', horses.length+'頭');alert(`デバッグ完了！\n馬数: ${horses.length}頭\nコンソールで詳細を確認してください`);}catch(error){console.error('❌ エラー:', error);alert('エラー: '+error.message);}})()" 
+           class="bookmarklet-link" style="background-color: #dc3545;">
+        🔍 デバッグ版（テスト用）
       </a>
     </div>
 
