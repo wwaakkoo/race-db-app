@@ -185,12 +185,76 @@ javascript:(function(){
         const jockey = cells[6]?.querySelector('a')?.textContent?.trim() || 
                       cells[6]?.textContent?.trim() || '';
         
+        // オッズと人気を取得（IDベースで検索）
+        let oddsText = cells[9]?.textContent?.trim() || '';
+        let popularityText = cells[10]?.textContent?.trim() || '';
+        
+        // ID パターンからオッズと人気を探す試行
+        const frameStr = String(frameNumber);
+        const horseStr = String(horseNumber).toString().padStart(2, '0');
+        
+        // odds-{枠}_{馬番} パターンでオッズを検索
+        const oddsId = `odds-${frameStr}_${horseStr}`;
+        const popularityId = `ninki-${frameStr}_${horseStr}`;
+        
+        console.log(`🔍 Bookmarklet Debug: 枠${frameNumber}_馬${horseNumber} 検索中...`);
+        console.log(`🆔 検索ID: オッズ="${oddsId}", 人気="${popularityId}"`);
+        
+        const oddsElement = document.getElementById(oddsId);
+        const popularityElement = document.getElementById(popularityId);
+        
+        console.log(`🔍 要素発見: オッズ=${oddsElement ? 'あり' : 'なし'}, 人気=${popularityElement ? 'あり' : 'なし'}`);
+        
+        if (oddsElement) {
+          const dynamicOdds = oddsElement.textContent.trim();
+          console.log(`💰 オッズ要素内容: "${dynamicOdds}"`);
+          if (dynamicOdds && dynamicOdds !== '---.-' && dynamicOdds !== '**') {
+            oddsText = dynamicOdds;
+            console.log(`✅ オッズ取得成功: ${dynamicOdds}`);
+          }
+        } else {
+          console.log(`❌ オッズ要素が見つかりません: ${oddsId}`);
+        }
+        
+        if (popularityElement) {
+          const dynamicPopularity = popularityElement.textContent.trim();
+          console.log(`🏆 人気要素内容: "${dynamicPopularity}"`);
+          if (dynamicPopularity && dynamicPopularity !== '**' && dynamicPopularity !== '--') {
+            popularityText = dynamicPopularity;
+            console.log(`✅ 人気取得成功: ${dynamicPopularity}`);
+          }
+        } else {
+          console.log(`❌ 人気要素が見つかりません: ${popularityId}`);
+        }
+        
+        // 他の可能性のあるセレクターも試行（最初の馬のみ）
+        if ((!oddsElement || oddsText === '---.-') && horseNumber === 1) {
+          console.log('🔍 他のオッズ要素を探索中...');
+          const allOddsElements = document.querySelectorAll('[id*="odds"]');
+          console.log(`🎯 見つかったオッズ関連要素: ${allOddsElements.length}個`);
+          allOddsElements.forEach((el, idx) => {
+            console.log(`  [${idx}] ID: ${el.id}, 内容: "${el.textContent.trim()}"`);
+          });
+        }
+        
+        // オッズと人気の値をパース（レース前は0にする）
+        let odds = 0;
+        let popularity = 0;
+        
+        if (oddsText && oddsText !== '---.-' && oddsText !== '**' && oddsText !== '--') {
+          odds = parseFloat(oddsText) || 0;
+        }
+        
+        if (popularityText && popularityText !== '**' && popularityText !== '--' && popularityText !== '') {
+          popularity = parseInt(popularityText) || 0;
+        }
+        
         if (horseName) {
           horses.push({
             frameNumber, horseNumber, name: horseName,
             sex: sexAge.match(/([牡牝セ])/)?.[1] || '',
             age: parseInt(sexAge.match(/(\d+)/)?.[1]) || 0,
-            weight, jockey, odds: 0, popularity: 0
+            weight, jockey, odds, popularity
           });
         }
       }
@@ -225,7 +289,7 @@ javascript:(function(){
     </ul>
 
     <div class="back-link">
-      <a href="../index.html">← Race DB Appに戻る</a>
+      <a href="/race-db-app/">← Race DB Appに戻る</a>
     </div>
   </div>
 </body>
