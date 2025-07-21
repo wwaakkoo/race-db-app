@@ -126,6 +126,14 @@
            class="bookmarklet-link">
         🏇 netkeibaデータ抽出
       </a>
+      
+      <br><br>
+      
+      <!-- オッズ調査版Bookmarklet -->
+      <a href="javascript:(function(){console.log('🔍 オッズ要素調査開始');try{console.log('📄 ページURL:', window.location.href);console.log('🔍 全てのオッズ関連要素を探索します...');const allOddsElements=document.querySelectorAll('[id*=\"odds\"]');console.log(`🎯 見つかったオッズ関連要素: ${allOddsElements.length}個`);allOddsElements.forEach((el,idx)=>{console.log(`  [${idx}] ID: ${el.id}, 内容: \"${el.textContent.trim()}\", タグ: ${el.tagName}`);});console.log('🔍 全ての人気関連要素を探索します...');const allPopularityElements=document.querySelectorAll('[id*=\"ninki\"]');console.log(`🎯 見つかった人気関連要素: ${allPopularityElements.length}個`);allPopularityElements.forEach((el,idx)=>{console.log(`  [${idx}] ID: ${el.id}, 内容: \"${el.textContent.trim()}\", タグ: ${el.tagName}`);});console.log('🔍 テーブル構造を調査します...');const tableRows=document.querySelectorAll('.Shutuba_Table tbody tr');console.log(`📋 テーブル行数: ${tableRows.length}`);tableRows.forEach((row,index)=>{const cells=row.querySelectorAll('td');if(cells.length>=11){const frameNumber=parseInt(cells[0]?.textContent?.trim())||0;const horseNumber=parseInt(cells[1]?.textContent?.trim())||0;const horseName=cells[3]?.querySelector('a')?.textContent?.trim()||cells[3]?.textContent?.trim()||'';if(horseName){console.log(`🐎 ${frameNumber}_${horseNumber}: ${horseName}`);console.log(`  セル9(オッズ): \"${cells[9]?.textContent?.trim()}\" (innerHTML: ${cells[9]?.innerHTML})`);console.log(`  セル10(人気): \"${cells[10]?.textContent?.trim()}\" (innerHTML: ${cells[10]?.innerHTML})`);const frameStr=String(frameNumber);const horseStr=String(horseNumber).padStart(2,'0');const oddsId=`odds-${frameStr}_${horseStr}`;const popularityId=`ninki-${frameStr}_${horseStr}`;console.log(`  🔍 検索ID: オッズ=\"${oddsId}\", 人気=\"${popularityId}\"`);const oddsElement=document.getElementById(oddsId);const popularityElement=document.getElementById(popularityId);console.log(`  📍 要素: オッズ=${oddsElement?'見つかった':'なし'}, 人気=${popularityElement?'見つかった':'なし'}`);if(oddsElement)console.log(`    💰 オッズ要素内容: \"${oddsElement.textContent.trim()}\"`);if(popularityElement)console.log(`    🏆 人気要素内容: \"${popularityElement.textContent.trim()}\"`);}}});alert('オッズ調査完了！コンソールで詳細を確認してください');}catch(error){console.error('❌ エラー:', error);alert('エラー: '+error.message);}})()" 
+           class="bookmarklet-link" style="background-color: #ffc107; color: black;">
+        🔍 オッズ調査版（詳細分析）
+      </a>
     </div>
 
     <h2>📋 使用方法</h2>
