@@ -105,6 +105,10 @@ const RaceForm = () => {
   // GitHub Pages版: Bookmarklet用のstate
   const [jsonData, setJsonData] = useState('');
   const [jsonLoading, setJsonLoading] = useState(false);
+  
+  // ローカル版: URL入力用のstate
+  const [raceUrl, setRaceUrl] = useState('');
+  const [urlLoading, setUrlLoading] = useState(false);
 
   // Bookmarkletから取得したJSONデータを処理する関数
   const processBookmarkletData = () => {
@@ -135,6 +139,58 @@ const RaceForm = () => {
       alert('JSONデータの処理に失敗しました: ' + (error instanceof Error ? error.message : String(error)));
     } finally {
       setJsonLoading(false);
+    }
+  };
+
+  // URL入力からスクレイピングしてデータを取得する関数（ローカル版専用）
+  const processUrlData = async () => {
+    try {
+      setUrlLoading(true);
+      
+      if (!raceUrl.trim()) {
+        alert('netkeibaのURLを入力してください');
+        return;
+      }
+      
+      if (!raceUrl.includes('race.netkeiba.com')) {
+        alert('有効なnetkeiba URLを入力してください\n例: https://race.netkeiba.com/race/shutuba.html?race_id=...');
+        return;
+      }
+      
+      console.log('URL スクレイピング開始:', raceUrl);
+      
+      // サーバーのスクレイピングAPIを呼び出し
+      const response = await fetch('/api/scrape/netkeiba', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: raceUrl })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`サーバーエラー: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (!result.success) {
+        throw new Error(result.error || 'データ取得に失敗しました');
+      }
+      
+      console.log('✅ スクレイピング成功:', result.data);
+      
+      // フォームに自動入力
+      autoFillForm(result.data);
+      
+      alert('URLからのデータ取得が完了しました！');
+      setRaceUrl(''); // URL入力フィールドをクリア
+      
+    } catch (error) {
+      console.error('❌ URLスクレイピングエラー:', error);
+      alert('URLからのデータ取得に失敗しました: ' + (error instanceof Error ? error.message : String(error)));
+    } finally {
+      setUrlLoading(false);
     }
   };
 
@@ -710,6 +766,94 @@ const RaceForm = () => {
               {l}
             </button>
           ))}
+        </div>
+      </div>
+
+      {/* URL入力セクション（ローカル版専用） */}
+      <div style={{ marginBottom: '20px', backgroundColor: '#f0f8f0', padding: '15px', borderRadius: '8px' }}>
+        <h2>🌐 URL自動スクレイピング</h2>
+        <p style={{ fontSize: '14px', color: '#666', marginBottom: '15px' }}>
+          netkeibaのレースURLを入力して、サーバーサイドで自動的にデータを取得できます（ローカル環境専用）
+        </p>
+        
+        <div style={{ marginBottom: '15px' }}>
+          <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold', fontSize: '14px' }}>
+            🔗 netkeiba レースURL:
+          </label>
+          <input
+            type="url"
+            value={raceUrl}
+            onChange={(e) => setRaceUrl(e.target.value)}
+            placeholder="https://race.netkeiba.com/race/shutuba.html?race_id=..."
+            style={{
+              width: '100%',
+              padding: '12px',
+              border: '1px solid #ddd',
+              borderRadius: '4px',
+              fontSize: '14px',
+              backgroundColor: '#fff'
+            }}
+          />
+        </div>
+        
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+          <button
+            type="button"
+            onClick={processUrlData}
+            disabled={urlLoading || !raceUrl.trim()}
+            style={{
+              backgroundColor: urlLoading ? '#6c757d' : '#28a745',
+              color: 'white',
+              padding: '10px 20px',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: urlLoading ? 'not-allowed' : 'pointer',
+              fontSize: '14px',
+              fontWeight: 'bold'
+            }}
+          >
+            {urlLoading ? '取得中...' : '🔄 データを取得'}
+          </button>
+          
+          <button
+            type="button"
+            onClick={() => setRaceUrl('')}
+            style={{
+              backgroundColor: '#6c757d',
+              color: 'white',
+              padding: '10px 16px',
+              border: 'none',
+              borderRadius: '4px',
+              cursor: 'pointer',
+              fontSize: '14px'
+            }}
+          >
+            🗑️ クリア
+          </button>
+        </div>
+        
+        {urlLoading && (
+          <div style={{ 
+            marginTop: '15px', 
+            padding: '10px', 
+            backgroundColor: '#fff3cd', 
+            border: '1px solid #ffeaa7', 
+            borderRadius: '4px',
+            fontSize: '14px'
+          }}>
+            ⏳ netkeibaからデータを取得しています...
+          </div>
+        )}
+        
+        <div style={{ marginTop: '15px', fontSize: '12px', color: '#666' }}>
+          💡 使用方法:
+          <ol style={{ margin: '5px 0', paddingLeft: '20px' }}>
+            <li>netkeibaの出馬表ページのURLをコピー</li>
+            <li>上の入力欄にURLを貼り付け</li>
+            <li>「データを取得」ボタンをクリック</li>
+            <li>自動的にレース情報と馬データが入力されます</li>
+          </ol>
+          ⚠️ この機能はローカル環境でのみ利用可能です
         </div>
       </div>
 
